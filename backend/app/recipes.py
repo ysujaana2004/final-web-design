@@ -1,1 +1,0 @@
-# endpoints for recipe management 

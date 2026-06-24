@@ -20,7 +20,7 @@ Outputs: Formatted recipes generated from the videos, a grocery list which prior
 ## Tech Stack
 
 Frontend: React, Vite
-Backend: Python, FastAPI
+Backend: Node.js, Express
 Database: Supabase (PostgreSQL)
 
 Tools:
