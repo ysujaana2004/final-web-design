@@ -11,11 +11,13 @@ the recipes become a jumbled mess as you lose track of those videos. Not to ment
 
 Make Me A Sandwich solves these problems by tailoring your grocery list to these videos and the items you already have in these pantries. The only info you need to share are the links to the recipe videos and the ingredients you already have at home. Our system does the rest.
 
-# Inputs: links to social media recipe videos, ingredients already in the user's pantry
+## Inputs/Outputs
 
-# Outputs: Formatted recipes generated from the videos, a grocery list which prioritizes ingredients which would "unlock" the greatest number of recipes based on what the user already has
+Inputs: links to social media recipe videos, ingredients already in the user's pantry
 
-# Tech Stack
+Outputs: Formatted recipes generated from the videos, a grocery list which prioritizes ingredients which would "unlock" the greatest number of recipes based on what the user already has
+
+## Tech Stack
 
 Frontend: React, Vite
 Backend: Python, FastAPI
