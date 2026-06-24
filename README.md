@@ -24,5 +24,5 @@ Backend: Python, FastAPI
 Database: Supabase (PostgreSQL)
 
 Tools:
-Gemini API (for converting video transcript into structured recipe)
-External API to transcribe social media links (TBD)
+Gemini API (for converting video audio into structured recipe)
+External API to  social media links (TBD)

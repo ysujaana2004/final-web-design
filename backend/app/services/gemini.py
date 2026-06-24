@@ -1,0 +1,1 @@
+# Gemini API Service (for turning cooking video transcriptions into a structured JSON format)

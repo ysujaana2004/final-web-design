@@ -1,0 +1,1 @@
+# Pantry API endpoints management (adding, removing, viewing items in the pantry)
