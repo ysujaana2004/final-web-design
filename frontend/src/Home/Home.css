@@ -1,1 +1,610 @@
+/* ===== Root theme ===== */
+:root {
+    --bg: #D0D9C7;
+    /* warm off-white */
+    --surface: #ffffff;
+    --muted: #bd6767;
+    --text: #1d1d1f;
+    --card-border: #efe7e2;
+    --accent: #290c06;
+    /* terracotta */
+    --accent-600: #b14a36;
+    --accent-50: #fdeee9;
+    --ring: rgba(200, 84, 62, 0.35);
+    --shadow: 0 10px 30px rgba(0, 0, 0, .06);
+    --radius-lg: 18px;
+    --radius-sm: 12px;
+    --maxw: 1120px;
+}
 
+/* ===== Base ===== */
+* {
+    box-sizing: border-box
+}
+
+html,
+body,
+#root {
+    height: 100%
+}
+
+html {
+    scroll-behavior: smooth
+}
+
+body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.5;
+}
+
+a {
+    color: inherit;
+    text-decoration: none
+}
+
+img {
+    max-width: 100%;
+    display: block
+}
+
+/* ===== Utilities ===== */
+.container {
+    width: 100%;
+    max-width: var(--maxw);
+    margin-inline: auto;
+    padding-inline: 20px;
+}
+
+/* ===== Home ===== */
+.image-container {
+    display: flex;
+    justify-content: center;
+    /* horizontally center */
+    align-items: center;
+    /* vertically center if it has height */
+    width: 100%;
+    margin-top: -25px;
+    /* optional spacing */
+}
+
+.main-image {
+    max-width: 350px;
+    /* size control */
+    height: auto;
+    display: block;
+    margin-top: 0%;
+    padding-bottom: 100px;
+
+}
+
+.cat-image {
+    max-width: 200px;
+    /* size control */
+    height: auto;
+    display: block;
+    margin-top: 0%;
+}
+
+.home .hero {
+    padding: 64px 20px 24px;
+    text-align: center;
+}
+
+.hero__icon {
+    width: 68px;
+    height: 68px;
+    margin: 12px auto 14px;
+    display: grid;
+    place-items: center;
+    font-size: 34px;
+    background: var(--accent-50);
+    border-radius: 999px;
+    border: 1px solid #f7d9cf;
+}
+
+.hero__title {
+    font-size: clamp(32px, 4vw, 54px);
+    line-height: 1.08;
+    margin: 10px 0 14px;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    background-color: #000000;
+    /*background: linear-gradient(120deg, rgb(0, 0, 0) 30%, rgb(0, 0, 0) 35%, #bf8c35ff, #bf8c35ff 100%);
+  /*background: linear-gradient(120deg,#bf8c35ff 30%, #bf8c35ff 35%, #6D7356, #6D7356 100%);*/
+    /*background: linear-gradient(120deg, #ffffff 0%, #ffffff 35%, #f3b182 70%, #feffff 100%);*/
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    margin-top: -300px;
+
+}
+
+.hero__subtitle {
+    margin: 0 auto;
+    max-width: 760px;
+    color: var(--muted);
+    font-size: clamp(15px, 1.9vw, 18px);
+    color: #000000;
+}
+
+.hero__cta {
+    margin-top: 26px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 999px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    box-shadow: var(--shadow);
+    transition: transform .08s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+    will-change: transform;
+}
+
+.btn:active {
+    transform: translateY(1px)
+}
+
+.btn--solid {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.btn--solid:hover {
+    background: var(--accent-600)
+}
+
+.btn--ghost {
+    background: var(--surface);
+    border-color: var(--card-border);
+}
+
+.btn--ghost:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 24px var(--ring);
+}
+
+/* ===== Features ===== */
+.features {
+    padding: 32px 0 80px;
+}
+
+.features__title {
+    text-align: center;
+    margin: 6px 0 6px;
+    font-size: clamp(22px, 2.5vw, 28px);
+    font-weight: 800;
+    color: #000000;
+    font-family: Verdana;
+}
+
+.features__subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin: 0 auto 24px;
+    max-width: 760px;
+    padding: 10 30px;
+    color: #bf8c35ff;
+    font-size: clamp(15px, 1.9vw, 18px);
+    font-weight: 500;
+    padding-top: 20px;
+
+}
+
+.grid {
+    width: 100%;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 18px;
+
+}
+
+.features .card {
+    background: rgb(255, 255, 255);
+
+    /*background: linear-gradient(120deg, #fec195, #fec195, #D0D9C7, #D0D9C7 100%);
+  border: 2px solid #fff;*/
+    box-shadow: #bf8c35ff 6px 6px;
+
+}
+
+.card {
+    grid-column: span 12;
+    /*background: var(--surface);*/
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 18px 18px 14px;
+    transition: border-color .2s ease, transform .06s ease, box-shadow .2s ease;
+    background-color: #a8c3b9;
+}
+
+.card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 16px 40px rgba(200, 84, 62, .10);
+    transform: translateY(-1px);
+}
+
+.card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.card__icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--accent-50);
+    border: 1px solid #f7d9cf;
+    font-size: 20px;
+}
+
+.card__title {
+    font-size: 18px;
+    margin: 0;
+    color: #000000;
+}
+
+.card__body {
+    color: var(--muted);
+    margin: 6px 0 14px;
+    color: #000000;
+}
+
+.card__action {
+    display: inline-block;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    background: #fff;
+}
+
+.card__action:hover {
+    border-color: var(--accent);
+    box-shadow: 0 6px 18px var(--ring);
+}
+
+/* 2-column on medium, 3-column on large */
+@media (min-width: 680px) {
+    .card {
+        grid-column: span 6;
+    }
+}
+
+@media (min-width: 1024px) {
+    .card {
+        grid-column: span 4;
+    }
+}
+
+/* Optional: space below Navbar if it's fixed */
+body.has-fixed-navbar main {
+    padding-top: 64px;
+}
+
+
+/* ===== Navbar ===== */
+.login-image {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.navbar {
+    position: static;
+    box-shadow: 0 1px 4px rgba(34, 9, 9, 0.03);
+}
+
+.navbar__container {
+    /*max-width: var(--maxw);*/
+    margin-inline: auto;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Brand */
+.navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 30px;
+    color: rgb(0, 0, 0);
+
+    /*background: linear-gradient(120deg, rgb(0, 0, 0) 30%, rgb(0, 0, 0) 35%, #bf8c35ff, #bf8c35ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;*/
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    text-decoration: var(--surface);
+
+}
+
+.navbar__logo {
+    font-size: 40px;
+}
+
+.navbar__name {
+    letter-spacing: -0.01em;
+}
+
+/* Center nav */
+.navbar__nav {
+    display: flex;
+    gap: 22px;
+}
+
+.navbar__link {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--muted);
+    transition: color 0.2s ease;
+    background-color: #000000;
+    /*background: linear-gradient(120deg, rgb(0, 0, 0) 30%, rgb(0, 0, 0) 35%, #bf8c35ff, #bf8c35ff 100%);
+  /*background: linear-gradient(120deg, #ffffff 0%, #ffffff 35%, #f3b182 70%, #f3b182 100%);*/
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+/*
+.navbar__link:hover {
+  color: var(--accent);
+}
+.navbar__link.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+ Right actions 
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: -20px;
+}
+
+.navbar__action {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.navbar__action:hover {
+  color: var(--accent);
+}
+
+.navbar__avatar {
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  background: var(--accent-50);
+  border: 1px solid #f7d9cf;
+  transition: background .2s;
+}
+.navbar__avatar:hover {
+  background: var(--accent);
+  color: #fff;
+}
+*/
+/* ===== Title-only recipe cards ===== */
+.recipe--minimal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+}
+
+.recipe--minimal .recipe__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.recipe--minimal .recipe__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== Recipe detail page ===== */
+.back-link {
+    display: inline-block;
+    margin: 18px 0;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.recipe-detail {
+    padding: 24px;
+}
+
+.recipe-detail__head {
+    margin-bottom: 14px;
+}
+
+.recipe-detail__title {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.recipe-detail__author {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.recipe-detail__transcript {
+    margin: 12px 0 22px;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.recipe-detail__section h2 {
+    font-size: 20px;
+    margin: 12px 0 8px;
+    font-weight: 700;
+}
+
+.recipe-detail__list {
+    padding-left: 20px;
+    margin: 0 0 18px;
+    color: var(--text);
+}
+
+.recipe-detail__list li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+/* ===== Auth forms (Login & Signup) ===== */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+}
+
+.auth-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    gap: 6px;
+}
+
+.auth-input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    font-size: 15px;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* ===== Custom Cursor ===== */
+body {
+    /* cursor: none !important;  (Keep this removed/commented out) */
+}
+
+.cursor-dot,
+.cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+    /* REMOVED: mix-blend-mode: exclusion; */
+}
+
+.cursor-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent);
+    /* Your terracotta color */
+    transition: opacity 0.1s ease;
+}
+
+.cursor-ring {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--accent);
+    /* Your terracotta color */
+    transition: transform 0.15s ease-out, width 0.3s ease-in-out, height 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+
+/* Cursor change when hovering over interactive elements */
+a:hover~.cursor-dot,
+.btn:hover~.cursor-dot,
+/* ... (other selectors) ... */
+.auth-input:focus~.cursor-dot {
+    opacity: 0;
+}
+
+a:hover~.cursor-ring,
+.btn:hover~.cursor-ring,
+/* ... (other selectors) ... */
+.auth-input:focus~.cursor-ring {
+    width: 60px;
+    height: 60px;
+    /* CHANGE: Set the border color to your white/light background for contrast on hover */
+    border-color: var(--surface);
+}
+
+.hero {
+    display: flex;
+    justify-content: center;
+    /* center content horizontally */
+    align-items: center;
+    /* center content vertically */
+    flex-direction: column;
+    /* stack heading, text, button vertically */
+    text-align: center;
+    min-height: 80vh;
+    /* makes hero section tall and centered */
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    /* space between heading, text, button */
+}
+
+.hero h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.hero-subtitle {
+    font-size: 1.1rem;
+    color: #e3b26f;
+    max-width: 600px;
+}
+
+.hero-button {
+    margin-top: 1.2rem;
+}
