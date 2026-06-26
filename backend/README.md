@@ -5,8 +5,8 @@ This backend is scaffolded for Node.js with Express.
 Current status:
 - Node project structure is in place
 - API routes are wired up
-- Feature modules are placeholders only
-- No business logic has been implemented yet
+- Downloader service can extract temporary audio from TikTok and Instagram video URLs
+- Remaining feature modules are placeholders only
 
 ### Setup
 
@@ -25,3 +25,12 @@ npm run dev
 ```
 
 Default server URL: `http://localhost:3001`
+
+### Downloader requirements
+
+The downloader service shells out to `yt-dlp` and expects `ffmpeg` to be available on the machine.
+
+Data flow:
+- input: TikTok or Instagram video URL
+- downloader: produces a temporary audio file on disk
+- later step: Gemini can consume that audio file and generate a structured recipe
