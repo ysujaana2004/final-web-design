@@ -26,6 +26,9 @@ npm run dev
 
 Default server URL: `http://localhost:3001`
 
+Node version:
+- Use Node 20 or newer
+
 ### Downloader requirements
 
 The downloader service shells out to `yt-dlp` and expects `ffmpeg` to be available on the machine.
@@ -34,3 +37,11 @@ Data flow:
 - input: TikTok or Instagram video URL
 - downloader: produces a temporary audio file on disk
 - later step: Gemini can consume that audio file and generate a structured recipe
+
+### Gemini requirements
+
+- Set `GEMINI_API_KEY` in `backend/.env`
+- The Gemini service takes an audio file and returns:
+  - `title`
+  - `ingredients`
+  - `instructions`
