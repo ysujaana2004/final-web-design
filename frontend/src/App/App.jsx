@@ -3,6 +3,10 @@ import Navbar from "../Navbar/Navbar.jsx";
 import Home from "../Home/Home.jsx";
 import Recipes from "../Recipes/Recipies.jsx";
 import Pantry from "../Pantry/Pantry.jsx";
+import Login from "../Login/Login.jsx";
+
+
+
 
 function App() {
   return (
@@ -12,6 +16,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/pantry" element={<Pantry />} />
+        <Route path="/login" element={<Login />} />
+
         <Route
           path="*"
           element={
