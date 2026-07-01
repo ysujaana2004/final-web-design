@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const {
   downloadAudio,
   cleanupDownloadedAudio
-} = require("../src/services/downloader");
+} = require("../../src/services/downloader");
 
 const testUrl = process.env.TEST_URL;
 

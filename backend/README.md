@@ -29,6 +29,16 @@ Default server URL: `http://localhost:3001`
 Node version:
 - Use Node 20 or newer
 
+### Tests
+
+- `npm test` runs the offline unit tests in `test/unit`
+- `npm run test:integration` runs the opt-in integration tests in `test/integration`
+- `npm run test:all` runs both suites
+
+Integration notes:
+- `test/integration/downloader-link.test.js` is skipped unless `TEST_URL` is set
+- live Gemini tests should also live under `test/integration`
+
 ### Downloader requirements
 
 The downloader service shells out to `yt-dlp` and expects `ffmpeg` to be available on the machine.

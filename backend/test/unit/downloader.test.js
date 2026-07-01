@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const {
   normalizeVideoUrl,
   parseDownloadedFilePath
-} = require("../src/services/downloader");
+} = require("../../src/services/downloader");
 
 test("normalizeVideoUrl accepts TikTok and Instagram URLs", () => {
   assert.equal(
@@ -32,4 +32,3 @@ test("parseDownloadedFilePath returns the last non-empty line", () => {
     "/private/tmp/make-me-a-sandwich-123/audio.mp3"
   );
 });
-﻿
