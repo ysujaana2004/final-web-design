@@ -6,6 +6,7 @@ Current status:
 - Node project structure is in place
 - API routes are wired up
 - Downloader service can extract temporary audio from TikTok and Instagram video URLs
+- `POST /api/recipes` can turn a supported video URL into recipe JSON
 - Remaining feature modules are placeholders only
 
 ### Setup
@@ -37,7 +38,8 @@ Node version:
 
 Integration notes:
 - `test/integration/downloader-link.test.js` is skipped unless `TEST_URL` is set
-- live Gemini tests should also live under `test/integration`
+- `test/integration/gemini-live.test.js` is skipped unless `TEST_AUDIO_FILE` is set
+- Gemini integration tests also require `GEMINI_API_KEY` in `backend/.env` or the shell environment
 
 ### Downloader requirements
 
@@ -55,3 +57,28 @@ Data flow:
   - `title`
   - `ingredients`
   - `instructions`
+
+### Recipe endpoint
+
+`POST /api/recipes`
+
+Example request body:
+
+```json
+{
+  "videoUrl": "https://www.instagram.com/reel/abc123/"
+}
+```
+
+Example response shape:
+
+```json
+{
+  "sourceUrl": "https://www.instagram.com/reel/abc123/",
+  "recipe": {
+    "title": "Garlic Butter Pasta",
+    "ingredients": ["8 oz pasta", "3 tbsp butter"],
+    "instructions": ["Boil the pasta.", "Toss with the butter."]
+  }
+}
+```
