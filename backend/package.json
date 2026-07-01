@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test test/unit",
-    "test:integration": "node --test test/integration",
-    "test:all": "node --test test/unit test/integration"
+    "test": "node --test 'test/unit/*.test.js'",
+    "test:integration": "node --test 'test/integration/*.test.js'",
+    "test:all": "node --test 'test/unit/*.test.js' 'test/integration/*.test.js'"
   },
   "engines": {
     "node": ">=20.0.0"
