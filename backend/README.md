@@ -28,7 +28,7 @@ npm run dev
 Default server URL: `http://localhost:3001`
 
 Node version:
-- Use Node 20 or newer
+- Use Node 22 or newer
 
 ### Tests
 
