@@ -1,4 +1,5 @@
 const express = require("express");
+const { env } = require("../lib/env");
 const { supabase } = require("../lib/db");
 const {
   normalizeIngredientName,
@@ -24,7 +25,10 @@ function normalizeUserId(value) {
 }
 
 function resolvePantryUserId(req = {}) {
-  return normalizeUserId(req.body?.user_id) || normalizeUserId(req.query?.user_id);
+  return normalizeUserId(req.body?.user_id)
+    || normalizeUserId(req.query?.user_id)
+    || env.devTestUserId
+    || "";
 }
 
 function createPantryRouter(dependencies = {}) {

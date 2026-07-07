@@ -99,3 +99,4 @@ Other recipe routes:
 - `POST /api/pantry` creates one pantry item; send `user_id` and `ingredient`
 - `PUT /api/pantry/:id` updates one owned pantry item; send `user_id` plus `quantity` and/or `unit`
 - `DELETE /api/pantry/:id?user_id=...` deletes one owned pantry item
+- Pantry routes fall back to `DEV_TEST_USER_ID` when `user_id` is omitted

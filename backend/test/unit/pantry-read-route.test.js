@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { createPantryRouter } = require("../../src/routes/pantry");
+const { env } = require("../../src/lib/env");
 const {
   createMockResponse,
   getRouteHandler
@@ -53,6 +54,42 @@ test("GET /api/pantry requires a user_id and filters pantry rows by that user", 
   assert.equal(receivedUserId, "user-123");
   assert.equal(response.statusCode, 200);
   assert.equal(response.body.data[0].user_id, "user-123");
+});
+
+test("GET /api/pantry falls back to DEV_TEST_USER_ID when request user_id is missing", async () => {
+  const originalDevTestUserId = env.devTestUserId;
+  env.devTestUserId = "dev-user-123";
+  let receivedUserId = null;
+
+  const router = createPantryRouter({
+    supabase: {
+      from(tableName) {
+        assert.equal(tableName, "pantry_items");
+        return {
+          select() {
+            return {
+              eq(columnName, value) {
+                assert.equal(columnName, "user_id");
+                receivedUserId = value;
+                return Promise.resolve({
+                  data: [],
+                  error: null
+                });
+              }
+            };
+          }
+        };
+      }
+    }
+  });
+  const handler = getRouteHandler(router, "get", "/");
+  const response = createMockResponse();
+
+  await handler({}, response, () => {});
+
+  assert.equal(receivedUserId, "dev-user-123");
+  assert.equal(response.statusCode, 200);
+  env.devTestUserId = originalDevTestUserId;
 });
 
 test("GET /api/pantry/:id returns 404 when the item does not belong to that user", async () => {

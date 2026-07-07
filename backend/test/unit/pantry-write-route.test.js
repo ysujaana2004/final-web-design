@@ -2,12 +2,15 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { createPantryRouter } = require("../../src/routes/pantry");
+const { env } = require("../../src/lib/env");
 const {
   createMockResponse,
   getRouteHandler
 } = require("./helpers/http");
 
 test("POST /api/pantry rejects requests without user_id or ingredient", async () => {
+  const originalDevTestUserId = env.devTestUserId;
+  env.devTestUserId = "";
   const router = createPantryRouter();
   const handler = getRouteHandler(router, "post", "/");
   const response = createMockResponse();
@@ -30,6 +33,7 @@ test("POST /api/pantry rejects requests without user_id or ingredient", async ()
     error: "user_id and ingredient are required"
   });
   assert.equal(nextWasCalled, false);
+  env.devTestUserId = originalDevTestUserId;
 });
 
 test("POST /api/pantry reuses an existing normalized ingredient row", async () => {
@@ -377,4 +381,78 @@ test("DELETE /api/pantry/:id scopes deletes to the owning user", async () => {
     status: "ok",
     message: "Pantry item deleted"
   });
+});
+
+test("POST /api/pantry falls back to DEV_TEST_USER_ID when request user_id is missing", async () => {
+  const originalDevTestUserId = env.devTestUserId;
+  env.devTestUserId = "dev-user-123";
+
+  const router = createPantryRouter({
+    supabase: {
+      from(tableName) {
+        if (tableName === "ingredients") {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    maybeSingle() {
+                      return Promise.resolve({
+                        data: { id: "ingredient-1" },
+                        error: null
+                      });
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+
+        if (tableName === "pantry_items") {
+          return {
+            insert(rows) {
+              assert.equal(rows[0].user_id, "dev-user-123");
+              return {
+                select() {
+                  return {
+                    single() {
+                      return Promise.resolve({
+                        data: {
+                          id: "pantry-1",
+                          user_id: "dev-user-123",
+                          ingredients: {
+                            name: "milk"
+                          }
+                        },
+                        error: null
+                      });
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+
+        throw new Error(`Unexpected table lookup: ${tableName}`);
+      }
+    }
+  });
+  const handler = getRouteHandler(router, "post", "/");
+  const response = createMockResponse();
+
+  await handler(
+    {
+      body: {
+        ingredient: "milk"
+      }
+    },
+    response,
+    () => {}
+  );
+
+  assert.equal(response.statusCode, 201);
+  assert.equal(response.body.data.user_id, "dev-user-123");
+  env.devTestUserId = originalDevTestUserId;
 });
