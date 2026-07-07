@@ -2,34 +2,14 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { createPantryRouter } = require("../../src/routes/pantry");
-
-function getPostHandler(router) {
-  const routeLayer = router.stack.find(
-    (layer) => layer.route?.path === "/" && layer.route.methods?.post
-  );
-
-  assert.ok(routeLayer, "POST / route should exist");
-  return routeLayer.route.stack[0].handle;
-}
-
-function createMockResponse() {
-  return {
-    body: null,
-    statusCode: 200,
-    json(payload) {
-      this.body = payload;
-      return this;
-    },
-    status(code) {
-      this.statusCode = code;
-      return this;
-    }
-  };
-}
+const {
+  createMockResponse,
+  getRouteHandler
+} = require("./helpers/http");
 
 test("POST /api/pantry rejects requests without user_id or ingredient", async () => {
   const router = createPantryRouter();
-  const handler = getPostHandler(router);
+  const handler = getRouteHandler(router, "post", "/");
   const response = createMockResponse();
   let nextWasCalled = false;
 
@@ -95,12 +75,13 @@ test("POST /api/pantry reuses an existing normalized ingredient row", async () =
 
               return {
                 select(columns) {
-                  assert.match(columns, /ingredients \(name\)/);
+                  assert.match(columns, /ingredients \(.*name.*\)/s);
                   return {
                     single() {
                       return Promise.resolve({
                         data: {
                           id: "pantry-1",
+                          user_id: "user-123",
                           quantity: null,
                           unit: null,
                           ingredients: {
@@ -121,7 +102,7 @@ test("POST /api/pantry reuses an existing normalized ingredient row", async () =
       }
     }
   });
-  const handler = getPostHandler(router);
+  const handler = getRouteHandler(router, "post", "/");
   const response = createMockResponse();
   const nextCalls = [];
 
@@ -140,11 +121,12 @@ test("POST /api/pantry reuses an existing normalized ingredient row", async () =
 
   assert.equal(nextCalls.length, 0);
   assert.deepEqual(calls, ["ingredients", "pantry_items"]);
-  assert.equal(response.statusCode, 200);
+  assert.equal(response.statusCode, 201);
   assert.deepEqual(response.body, {
     status: "ok",
     data: {
       id: "pantry-1",
+      user_id: "user-123",
       quantity: null,
       unit: null,
       ingredients: {
@@ -221,6 +203,7 @@ test("POST /api/pantry creates a new canonical ingredient row when missing", asy
                       return Promise.resolve({
                         data: {
                           id: "pantry-2",
+                          user_id: "user-123",
                           quantity: null,
                           unit: null,
                           ingredients: {
@@ -241,7 +224,7 @@ test("POST /api/pantry creates a new canonical ingredient row when missing", asy
       }
     }
   });
-  const handler = getPostHandler(router);
+  const handler = getRouteHandler(router, "post", "/");
   const response = createMockResponse();
   const nextCalls = [];
 
@@ -260,6 +243,138 @@ test("POST /api/pantry creates a new canonical ingredient row when missing", asy
 
   assert.equal(nextCalls.length, 0);
   assert.deepEqual(calls, ["ingredients", "ingredients", "pantry_items"]);
-  assert.equal(response.statusCode, 200);
+  assert.equal(response.statusCode, 201);
   assert.equal(response.body.data.ingredients.name, "paprika");
+});
+
+test("PUT /api/pantry/:id scopes updates to the owning user", async () => {
+  let capturedUpdateFields = null;
+  const router = createPantryRouter({
+    supabase: {
+      from(tableName) {
+        assert.equal(tableName, "pantry_items");
+        return {
+          update(updateFields) {
+            capturedUpdateFields = updateFields;
+            return {
+              eq(columnName, value) {
+                assert.equal(columnName, "id");
+                assert.equal(value, "pantry-1");
+                return {
+                  eq(secondColumnName, secondValue) {
+                    assert.equal(secondColumnName, "user_id");
+                    assert.equal(secondValue, "user-123");
+                    return {
+                      select() {
+                        return {
+                          maybeSingle() {
+                            return Promise.resolve({
+                              data: {
+                                id: "pantry-1",
+                                user_id: "user-123",
+                                quantity: 0,
+                                unit: null,
+                                ingredients: {
+                                  name: "salt"
+                                }
+                              },
+                              error: null
+                            });
+                          }
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+    }
+  });
+  const handler = getRouteHandler(router, "put", "/:id");
+  const response = createMockResponse();
+
+  await handler(
+    {
+      params: {
+        id: "pantry-1"
+      },
+      body: {
+        user_id: "user-123",
+        quantity: 0,
+        unit: ""
+      }
+    },
+    response,
+    () => {}
+  );
+
+  assert.deepEqual(capturedUpdateFields, {
+    quantity: 0,
+    unit: null
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.data.quantity, 0);
+});
+
+test("DELETE /api/pantry/:id scopes deletes to the owning user", async () => {
+  const router = createPantryRouter({
+    supabase: {
+      from(tableName) {
+        assert.equal(tableName, "pantry_items");
+        return {
+          delete() {
+            return {
+              eq(columnName, value) {
+                assert.equal(columnName, "id");
+                assert.equal(value, "pantry-1");
+                return {
+                  eq(secondColumnName, secondValue) {
+                    assert.equal(secondColumnName, "user_id");
+                    assert.equal(secondValue, "user-123");
+                    return {
+                      select(columns) {
+                        assert.equal(columns, "id");
+                        return {
+                          maybeSingle() {
+                            return Promise.resolve({
+                              data: { id: "pantry-1" },
+                              error: null
+                            });
+                          }
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+    }
+  });
+  const handler = getRouteHandler(router, "delete", "/:id");
+  const response = createMockResponse();
+
+  await handler(
+    {
+      params: {
+        id: "pantry-1"
+      },
+      query: {
+        user_id: "user-123"
+      }
+    },
+    response,
+    () => {}
+  );
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.body, {
+    status: "ok",
+    message: "Pantry item deleted"
+  });
 });

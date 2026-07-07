@@ -5,10 +5,26 @@ const {
   resolveOrCreateIngredientId
 } = require("../lib/ingredients");
 
-function resolvePantryUserId(requestBody = {}) {
-  return typeof requestBody.user_id === "string"
-    ? requestBody.user_id.trim()
+const PANTRY_SELECT = `
+  id,
+  user_id,
+  quantity,
+  unit,
+  created_at,
+  ingredient_id,
+  ingredients (
+    name
+  )
+`;
+
+function normalizeUserId(value) {
+  return typeof value === "string"
+    ? value.trim()
     : "";
+}
+
+function resolvePantryUserId(req = {}) {
+  return normalizeUserId(req.body?.user_id) || normalizeUserId(req.query?.user_id);
 }
 
 function createPantryRouter(dependencies = {}) {
@@ -18,20 +34,55 @@ function createPantryRouter(dependencies = {}) {
   // GET /api/pantry
   router.get("/", async (req, res, next) => {
     try {
+      const userId = resolvePantryUserId(req);
+
+      if (!userId) {
+        return res.status(400).json({
+          error: "user_id is required"
+        });
+      }
+
       const { data, error } = await database
         .from("pantry_items")
-        .select(`
-          id,
-          quantity,
-          unit,
-          created_at,
-          ingredient_id,
-          ingredients (
-            name
-          )
-        `);
+        .select(PANTRY_SELECT)
+        .eq("user_id", userId);
 
       if (error) throw error;
+
+      res.json({
+        status: "ok",
+        data
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // GET /api/pantry/:id
+  router.get("/:id", async (req, res, next) => {
+    try {
+      const userId = resolvePantryUserId(req);
+
+      if (!userId) {
+        return res.status(400).json({
+          error: "user_id is required"
+        });
+      }
+
+      const { data, error } = await database
+        .from("pantry_items")
+        .select(PANTRY_SELECT)
+        .eq("id", req.params.id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        return res.status(404).json({
+          error: "Pantry item not found"
+        });
+      }
 
       res.json({
         status: "ok",
@@ -46,7 +97,7 @@ function createPantryRouter(dependencies = {}) {
   router.post("/", async (req, res, next) => {
     try {
       const { ingredient, quantity, unit } = req.body;
-      const userId = resolvePantryUserId(req.body);
+      const userId = resolvePantryUserId(req);
       const normalizedIngredient = normalizeIngredientName(ingredient);
 
       if (!userId || !normalizedIngredient) {
@@ -67,17 +118,12 @@ function createPantryRouter(dependencies = {}) {
       const { data, error } = await database
         .from("pantry_items")
         .insert([pantryItem])
-        .select(`
-          id,
-          quantity,
-          unit,
-          ingredients (name)
-        `)
+        .select(PANTRY_SELECT)
         .single();
 
       if (error) throw error;
 
-      res.json({
+      res.status(201).json({
         status: "ok",
         data
       });
@@ -89,33 +135,47 @@ function createPantryRouter(dependencies = {}) {
   // PUT /api/pantry/:id
   router.put("/:id", async (req, res, next) => {
     try {
-      const { id } = req.params;
+      const userId = resolvePantryUserId(req);
       const { quantity, unit } = req.body;
 
-      if (!quantity && !unit) {
+      if (!userId) {
+        return res.status(400).json({
+          error: "user_id is required"
+        });
+      }
+
+      // `undefined` means "not provided"; null or 0 are still valid updates.
+      if (quantity === undefined && unit === undefined) {
         return res.status(400).json({
           error: "quantity or unit is required"
         });
       }
 
+      const updateFields = {};
+
+      if (quantity !== undefined) {
+        updateFields.quantity = quantity;
+      }
+
+      if (unit !== undefined) {
+        updateFields.unit = unit || null;
+      }
+
       const { data, error } = await database
         .from("pantry_items")
-        .update({
-          quantity,
-          unit
-        })
-        .eq("id", id)
-        .select(`
-          id,
-          quantity,
-          unit,
-          ingredients (
-            name
-          )
-        `)
-        .single();
+        .update(updateFields)
+        .eq("id", req.params.id)
+        .eq("user_id", userId)
+        .select(PANTRY_SELECT)
+        .maybeSingle();
 
       if (error) throw error;
+
+      if (!data) {
+        return res.status(404).json({
+          error: "Pantry item not found"
+        });
+      }
 
       res.json({
         status: "ok",
@@ -129,14 +189,29 @@ function createPantryRouter(dependencies = {}) {
   // DELETE /api/pantry/:id
   router.delete("/:id", async (req, res, next) => {
     try {
-      const { id } = req.params;
+      const userId = resolvePantryUserId(req);
 
-      const { error } = await database
+      if (!userId) {
+        return res.status(400).json({
+          error: "user_id is required"
+        });
+      }
+
+      const { data, error } = await database
         .from("pantry_items")
         .delete()
-        .eq("id", id);
+        .eq("id", req.params.id)
+        .eq("user_id", userId)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+
+      if (!data) {
+        return res.status(404).json({
+          error: "Pantry item not found"
+        });
+      }
 
       res.json({
         status: "ok",

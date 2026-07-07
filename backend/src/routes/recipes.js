@@ -15,19 +15,47 @@ const CLIENT_INPUT_ERRORS = new Set([
   "Only TikTok and Instagram video URLs are supported."
 ]);
 
+const RECIPE_SELECT = `
+  id,
+  created_by,
+  title,
+  source_url,
+  instructions,
+  created_at,
+  recipe_ingredients (
+    id,
+    ingredient_id,
+    raw_text,
+    quantity,
+    unit,
+    ingredients (
+      name
+    )
+  )
+`;
+
 // The downloader already throws a few clear validation errors for bad URLs.
 // Those should come back to the client as 400s instead of generic 500s.
 function isClientInputError(error) {
   return Boolean(error?.message && CLIENT_INPUT_ERRORS.has(error.message));
 }
 
-function resolveRecipeOwnerId(requestBody = {}) {
-  const bodyUserId = typeof requestBody.user_id === "string"
-    ? requestBody.user_id.trim()
+function normalizeUserId(value) {
+  return typeof value === "string"
+    ? value.trim()
     : "";
+}
+
+function resolveRecipeOwnerId(request = {}) {
+  const bodyUserId = normalizeUserId(request.body?.user_id);
+  const queryUserId = normalizeUserId(request.query?.user_id);
 
   if (bodyUserId) {
     return bodyUserId;
+  }
+
+  if (queryUserId) {
+    return queryUserId;
   }
 
   return env.devTestUserId || null;
@@ -87,16 +115,90 @@ async function saveGeneratedRecipe({
   return savedRecipe;
 }
 
+async function buildRecipeIngredientRows(recipeId, ingredientLines, database = supabase) {
+  return Promise.all(
+    ingredientLines.map(async (rawText) => ({
+      recipe_id: recipeId,
+      ingredient_id: await resolveOrCreateIngredientId(rawText, database),
+      raw_text: rawText
+    }))
+  );
+}
+
 function createRecipesRouter(dependencies = {}) {
   const router = express.Router();
   const download = dependencies.downloadAudio || downloadAudio; // Use an injected fake in tests, otherwise the real downloader.
   const cleanup = dependencies.cleanupDownloadedAudio || cleanupDownloadedAudio; // Same pattern for temp-file cleanup.
   const generate = dependencies.generateRecipeFromAudio || generateRecipeFromAudio; // Same pattern for the Gemini step.
   const saveRecipe = dependencies.saveGeneratedRecipe || saveGeneratedRecipe;
+  const database = dependencies.supabase || supabase;
+
+  // GET /api/recipes
+  router.get("/", async (req, res, next) => {
+    try {
+      const userId = resolveRecipeOwnerId(req);
+
+      if (!userId) {
+        return res.status(400).json({
+          error: 'A "user_id" is required.'
+        });
+      }
+
+      const { data, error } = await database
+        .from("recipes")
+        .select(RECIPE_SELECT)
+        .eq("created_by", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      res.json({
+        status: "ok",
+        data
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // GET /api/recipes/:id
+  router.get("/:id", async (req, res, next) => {
+    try {
+      const userId = resolveRecipeOwnerId(req);
+
+      if (!userId) {
+        return res.status(400).json({
+          error: 'A "user_id" is required.'
+        });
+      }
+
+      const { data, error } = await database
+        .from("recipes")
+        .select(RECIPE_SELECT)
+        .eq("id", req.params.id)
+        .eq("created_by", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        return res.status(404).json({
+          error: "Recipe not found"
+        });
+      }
+
+      res.json({
+        status: "ok",
+        data
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   router.post("/", async (req, res, next) => {
     const videoUrl = req.body?.videoUrl; // Avoids crashing if req.body is missing entirely.
-    const userId = resolveRecipeOwnerId(req.body);
+    const userId = resolveRecipeOwnerId(req);
 
     if (typeof videoUrl !== "string" || !videoUrl.trim()) {
       res.status(400).json({
@@ -153,6 +255,199 @@ function createRecipesRouter(dependencies = {}) {
     }
   });
 
+  // PUT /api/recipes/:id
+  router.put("/:id", async (req, res, next) => {
+    try {
+      const userId = resolveRecipeOwnerId(req);
+
+      if (!userId) {
+        return res.status(400).json({
+          error: 'A "user_id" is required.'
+        });
+      }
+
+      const updateFields = {};
+
+      if (typeof req.body?.title === "string") {
+        const title = req.body.title.trim();
+
+        if (!title) {
+          return res.status(400).json({
+            error: "title cannot be empty"
+          });
+        }
+
+        updateFields.title = title;
+      }
+
+      if (req.body?.source_url !== undefined) {
+        updateFields.source_url = typeof req.body.source_url === "string" && req.body.source_url.trim()
+          ? req.body.source_url.trim()
+          : null;
+      }
+
+      if (req.body?.instructions !== undefined) {
+        if (!Array.isArray(req.body.instructions) || req.body.instructions.length === 0) {
+          return res.status(400).json({
+            error: "instructions must be a non-empty array of strings"
+          });
+        }
+
+        const instructions = req.body.instructions
+          .filter((item) => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        if (instructions.length === 0 || instructions.length !== req.body.instructions.length) {
+          return res.status(400).json({
+            error: "instructions must be a non-empty array of strings"
+          });
+        }
+
+        updateFields.instructions = instructions;
+      }
+
+      const shouldReplaceIngredients = req.body?.ingredients !== undefined;
+      let ingredientRows = null;
+
+      if (shouldReplaceIngredients) {
+        if (!Array.isArray(req.body.ingredients) || req.body.ingredients.length === 0) {
+          return res.status(400).json({
+            error: "ingredients must be a non-empty array of strings"
+          });
+        }
+
+        const ingredientLines = req.body.ingredients
+          .filter((item) => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        if (ingredientLines.length === 0 || ingredientLines.length !== req.body.ingredients.length) {
+          return res.status(400).json({
+            error: "ingredients must be a non-empty array of strings"
+          });
+        }
+
+        // Build the replacement rows before deleting anything.
+        ingredientRows = await buildRecipeIngredientRows(req.params.id, ingredientLines, database);
+      }
+
+      if (Object.keys(updateFields).length === 0 && !shouldReplaceIngredients) {
+        return res.status(400).json({
+          error: "At least one updatable field is required"
+        });
+      }
+
+      // First confirm the recipe belongs to this user.
+      const { data: existingRecipe, error: existingRecipeError } = await database
+        .from("recipes")
+        .select("id")
+        .eq("id", req.params.id)
+        .eq("created_by", userId)
+        .maybeSingle();
+
+      if (existingRecipeError) throw existingRecipeError;
+
+      if (!existingRecipe) {
+        return res.status(404).json({
+          error: "Recipe not found"
+        });
+      }
+
+      if (Object.keys(updateFields).length > 0) {
+        const { error: updateError } = await database
+          .from("recipes")
+          .update(updateFields)
+          .eq("id", req.params.id)
+          .eq("created_by", userId);
+
+        if (updateError) throw updateError;
+      }
+
+      if (shouldReplaceIngredients) {
+        const { error: deleteIngredientsError } = await database
+          .from("recipe_ingredients")
+          .delete()
+          .eq("recipe_id", req.params.id);
+
+        if (deleteIngredientsError) throw deleteIngredientsError;
+
+        const { error: insertIngredientsError } = await database
+          .from("recipe_ingredients")
+          .insert(ingredientRows);
+
+        if (insertIngredientsError) throw insertIngredientsError;
+      }
+
+      const { data, error } = await database
+        .from("recipes")
+        .select(RECIPE_SELECT)
+        .eq("id", req.params.id)
+        .eq("created_by", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      res.json({
+        status: "ok",
+        data
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // DELETE /api/recipes/:id
+  router.delete("/:id", async (req, res, next) => {
+    try {
+      const userId = resolveRecipeOwnerId(req);
+
+      if (!userId) {
+        return res.status(400).json({
+          error: 'A "user_id" is required.'
+        });
+      }
+
+      // Remove dependent ingredient rows first since the schema does not use ON DELETE CASCADE.
+      const { data: recipeToDelete, error: recipeLookupError } = await database
+        .from("recipes")
+        .select("id")
+        .eq("id", req.params.id)
+        .eq("created_by", userId)
+        .maybeSingle();
+
+      if (recipeLookupError) throw recipeLookupError;
+
+      if (!recipeToDelete) {
+        return res.status(404).json({
+          error: "Recipe not found"
+        });
+      }
+
+      const { error: deleteIngredientsError } = await database
+        .from("recipe_ingredients")
+        .delete()
+        .eq("recipe_id", req.params.id);
+
+      if (deleteIngredientsError) throw deleteIngredientsError;
+
+      const { error: deleteRecipeError } = await database
+        .from("recipes")
+        .delete()
+        .eq("id", req.params.id)
+        .eq("created_by", userId);
+
+      if (deleteRecipeError) throw deleteRecipeError;
+
+      res.json({
+        status: "ok",
+        message: "Recipe deleted"
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.all("*", (_req, res) => {
     res.status(404).json({
       message: "Recipe route not found."
@@ -166,3 +461,4 @@ module.exports = createRecipesRouter();
 module.exports.createRecipesRouter = createRecipesRouter; // Exported separately so unit tests can build the router with mocked dependencies.
 module.exports.resolveRecipeOwnerId = resolveRecipeOwnerId;
 module.exports.saveGeneratedRecipe = saveGeneratedRecipe;
+module.exports.buildRecipeIngredientRows = buildRecipeIngredientRows;
