@@ -66,7 +66,8 @@ Example request body:
 
 ```json
 {
-  "videoUrl": "https://www.instagram.com/reel/abc123/"
+  "videoUrl": "https://www.instagram.com/reel/abc123/",
+  "user_id": "your-profile-uuid"
 }
 ```
 

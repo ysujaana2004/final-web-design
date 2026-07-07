@@ -29,6 +29,7 @@ function createMockResponse() {
 
 test("POST /api/recipes returns a generated recipe and cleans up temporary audio", async () => {
   const cleanupCalls = [];
+  const saveCalls = [];
   const router = createRecipesRouter({
     cleanupDownloadedAudio: async (tempDirectory) => {
       cleanupCalls.push(tempDirectory);
@@ -42,7 +43,13 @@ test("POST /api/recipes returns a generated recipe and cleans up temporary audio
       title: "Garlic Toast",
       ingredients: ["Bread", "Butter", "Garlic"],
       instructions: ["Toast the bread.", "Spread the garlic butter."]
-    })
+    }),
+    saveGeneratedRecipe: async (payload) => {
+      saveCalls.push(payload);
+      return {
+        id: "recipe-123"
+      };
+    }
   });
   const handler = getPostHandler(router);
   const response = createMockResponse();
@@ -51,7 +58,8 @@ test("POST /api/recipes returns a generated recipe and cleans up temporary audio
   await handler(
     {
       body: {
-        videoUrl: "https://www.instagram.com/reel/test/"
+        videoUrl: "https://www.instagram.com/reel/test/",
+        user_id: "user-123"
       }
     },
     response,
@@ -67,10 +75,22 @@ test("POST /api/recipes returns a generated recipe and cleans up temporary audio
       title: "Garlic Toast",
       ingredients: ["Bread", "Butter", "Garlic"],
       instructions: ["Toast the bread.", "Spread the garlic butter."]
-    }
+    },
+    recipeId: "recipe-123"
   });
   assert.equal(nextWasCalled, false);
   assert.deepEqual(cleanupCalls, ["/tmp/recipe-download"]);
+  assert.deepEqual(saveCalls, [
+    {
+      sourceUrl: "https://www.instagram.com/reel/test/?normalized=true",
+      recipe: {
+        title: "Garlic Toast",
+        ingredients: ["Bread", "Butter", "Garlic"],
+        instructions: ["Toast the bread.", "Spread the garlic butter."]
+      },
+      userId: "user-123"
+    }
+  ]);
 });
 
 test("POST /api/recipes rejects requests without a videoUrl", async () => {
@@ -99,6 +119,34 @@ test("POST /api/recipes rejects requests without a videoUrl", async () => {
   assert.equal(downloadWasCalled, false);
 });
 
+test("POST /api/recipes rejects requests without a user", async () => {
+  let downloadWasCalled = false;
+  const router = createRecipesRouter({
+    downloadAudio: async () => {
+      downloadWasCalled = true;
+      throw new Error("download should not run");
+    }
+  });
+  const handler = getPostHandler(router);
+  const response = createMockResponse();
+
+  await handler(
+    {
+      body: {
+        videoUrl: "https://www.instagram.com/reel/test/"
+      }
+    },
+    response,
+    () => {}
+  );
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(response.body, {
+    error: 'A "user_id" is required unless DEV_TEST_USER_ID is configured.'
+  });
+  assert.equal(downloadWasCalled, false);
+});
+
 test("POST /api/recipes cleans up temporary audio when Gemini fails", async () => {
   const cleanupCalls = [];
   const router = createRecipesRouter({
@@ -121,7 +169,8 @@ test("POST /api/recipes cleans up temporary audio when Gemini fails", async () =
   await handler(
     {
       body: {
-        videoUrl: "https://www.tiktok.com/@cook/video/123"
+        videoUrl: "https://www.tiktok.com/@cook/video/123",
+        user_id: "user-123"
       }
     },
     response,
@@ -133,5 +182,48 @@ test("POST /api/recipes cleans up temporary audio when Gemini fails", async () =
   assert.equal(response.body, null);
   assert.equal(nextCalls.length, 1);
   assert.equal(nextCalls[0].message, "Gemini is temporarily unavailable.");
+  assert.deepEqual(cleanupCalls, ["/tmp/recipe-download"]);
+});
+
+test("POST /api/recipes cleans up temporary audio when recipe saving fails", async () => {
+  const cleanupCalls = [];
+  const router = createRecipesRouter({
+    cleanupDownloadedAudio: async (tempDirectory) => {
+      cleanupCalls.push(tempDirectory);
+    },
+    downloadAudio: async () => ({
+      filePath: "/tmp/audio.mp3",
+      sourceUrl: "https://www.instagram.com/reel/test/",
+      tempDirectory: "/tmp/recipe-download"
+    }),
+    generateRecipeFromAudio: async () => ({
+      title: "Garlic Toast",
+      ingredients: ["Bread", "Butter", "Garlic"],
+      instructions: ["Toast the bread.", "Spread the garlic butter."]
+    }),
+    saveGeneratedRecipe: async () => {
+      throw new Error("Recipe insert failed.");
+    }
+  });
+  const handler = getPostHandler(router);
+  const response = createMockResponse();
+  const nextCalls = [];
+
+  await handler(
+    {
+      body: {
+        videoUrl: "https://www.instagram.com/reel/test/",
+        user_id: "user-123"
+      }
+    },
+    response,
+    (error) => {
+      nextCalls.push(error);
+    }
+  );
+
+  assert.equal(response.body, null);
+  assert.equal(nextCalls.length, 1);
+  assert.equal(nextCalls[0].message, "Recipe insert failed.");
   assert.deepEqual(cleanupCalls, ["/tmp/recipe-download"]);
 });
