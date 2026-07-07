@@ -2,6 +2,7 @@ const express = require("express");
 
 const { env } = require("../lib/env");
 const { supabase } = require("../lib/db");
+const { resolveOrCreateIngredientId } = require("../lib/ingredients");
 const {
   downloadAudio,
   cleanupDownloadedAudio
@@ -54,16 +55,23 @@ async function saveGeneratedRecipe({
     throw recipeError;
   }
 
-  const ingredientRows = recipe.ingredients.map((rawText) => ({
-    recipe_id: savedRecipe.id,
-    raw_text: rawText
-  }));
+  try {
+    const ingredientRows = await Promise.all(
+      recipe.ingredients.map(async (rawText) => ({
+        recipe_id: savedRecipe.id,
+        ingredient_id: await resolveOrCreateIngredientId(rawText, database),
+        raw_text: rawText
+      }))
+    );
 
-  const { error: ingredientError } = await database
-    .from("recipe_ingredients")
-    .insert(ingredientRows);
+    const { error: ingredientError } = await database
+      .from("recipe_ingredients")
+      .insert(ingredientRows);
 
-  if (ingredientError) {
+    if (ingredientError) {
+      throw ingredientError;
+    }
+  } catch (ingredientError) {
     try {
       await database
         .from("recipes")
