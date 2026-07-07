@@ -17,6 +17,10 @@ Inputs: links to social media recipe videos, ingredients already in the user's p
 
 Outputs: Formatted recipes generated from the videos, a grocery list which prioritizes ingredients which would "unlock" the greatest number of recipes based on what the user already has
 
+## Requirements
+
+- Node.js 22 or newer
+
 ## Tech Stack
 
 Frontend: React, Vite

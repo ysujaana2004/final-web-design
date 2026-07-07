@@ -7,7 +7,9 @@ Current status:
 - API routes are wired up
 - Downloader service can extract temporary audio from TikTok and Instagram video URLs
 - `POST /api/recipes` can turn a supported video URL into recipe JSON
-- Remaining feature modules are placeholders only
+- Recipe CRUD is implemented and scoped by `user_id`
+- Pantry CRUD is implemented and scoped by `user_id`
+- Auth, users, and groceries are still placeholders only
 
 ### Setup
 
@@ -28,7 +30,7 @@ npm run dev
 Default server URL: `http://localhost:3001`
 
 Node version:
-- Use Node 20 or newer
+- Use Node 22 or newer
 
 ### Tests
 
@@ -66,7 +68,8 @@ Example request body:
 
 ```json
 {
-  "videoUrl": "https://www.instagram.com/reel/abc123/"
+  "videoUrl": "https://www.instagram.com/reel/abc123/",
+  "user_id": "your-profile-uuid"
 }
 ```
 
@@ -82,3 +85,18 @@ Example response shape:
   }
 }
 ```
+
+Other recipe routes:
+- `GET /api/recipes?user_id=...` returns only that user's recipes
+- `GET /api/recipes/:id?user_id=...` returns one owned recipe
+- `PUT /api/recipes/:id` updates one owned recipe; send `user_id` plus any of `title`, `source_url`, `instructions`, `ingredients`
+- `DELETE /api/recipes/:id?user_id=...` deletes one owned recipe
+
+### Pantry endpoints
+
+- `GET /api/pantry?user_id=...` returns only that user's pantry items
+- `GET /api/pantry/:id?user_id=...` returns one owned pantry item
+- `POST /api/pantry` creates one pantry item; send `user_id` and `ingredient`
+- `PUT /api/pantry/:id` updates one owned pantry item; send `user_id` plus `quantity` and/or `unit`
+- `DELETE /api/pantry/:id?user_id=...` deletes one owned pantry item
+- Pantry routes fall back to `DEV_TEST_USER_ID` when `user_id` is omitted

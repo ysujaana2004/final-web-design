@@ -1,11 +1,9 @@
+const { createClient } = require("@supabase/supabase-js");
 const { env } = require("./env");
 
-function getDatabaseConfig() {
-  return {
-    provider: "supabase",
-    url: env.supabaseUrl,
-    anonKey: env.supabaseAnonKey
-  };
-}
+const supabase = createClient(
+  env.supabaseUrl,
+  env.supabaseAnonKey
+);
 
-module.exports = { getDatabaseConfig };
+module.exports = { supabase };
