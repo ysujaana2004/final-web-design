@@ -100,3 +100,15 @@ Other recipe routes:
 - `PUT /api/pantry/:id` updates one owned pantry item; send `user_id` plus `quantity` and/or `unit`
 - `DELETE /api/pantry/:id?user_id=...` deletes one owned pantry item
 - Pantry routes fall back to `DEV_TEST_USER_ID` when `user_id` is omitted
+
+### Groceries implementation notes
+
+Purpose:
+- Add a read-only `GET /api/groceries` endpoint for ranked grocery recommendations.
+
+What needs to be done:
+- Implement the route in `src/routes/groceries.js`.
+- Implement the comparison and ranking logic in `src/services/groceries.js`.
+- Add route tests in `test/unit/groceries-route.test.js`.
+- Add service tests in `test/unit/groceries-service.test.js`.
+- Return structured recommendation rows so the frontend can render strings like `tomatoes (unlocks 5 recipes)`.
