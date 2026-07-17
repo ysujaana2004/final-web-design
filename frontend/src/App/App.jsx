@@ -4,7 +4,7 @@ import Home from "../Home/Home.jsx";
 import Recipes from "../Recipes/Recipies.jsx";
 import Pantry from "../Pantry/Pantry.jsx";
 import Login from "../Login/Login.jsx";
-
+import GroceryList from "../Grocery List/GroceryList.jsx";
 
 
 
@@ -17,6 +17,7 @@ function App() {
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/pantry" element={<Pantry />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/grocery" element={<GroceryList />} />
 
         <Route
           path="*"
