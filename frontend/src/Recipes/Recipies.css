@@ -1,0 +1,93 @@
+/*SEARCH BAR*/
+.searchbar {
+    display: flex;
+    align-items: center;
+    background: black;
+    width: 250px;
+    /* stays left, does NOT stretch */
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    /* rectangular */
+    box-shadow: 0 4px 8px rgba(88, 35, 35, 0.2);
+}
+
+.searchbar__input {
+    display: block;
+    color: rgb(0, 0, 0);
+    /*background: linear-gradient(142.99deg, rgba(35, 10, 10, 0.63) 15.53%, rgba(243, 243, 243, 0.63) 88.19%);*/
+    /*box-shadow: 0px 12px 24px -1px rgba(0, 0, 0, 0.18);*/
+    border: none;
+    margin: 0 2px;
+    padding: 6px 15px;
+    outline: none;
+    text-align: left;
+    /*width: 200px;
+  transition: 0.5s;
+  font-size: 1rem;*/
+}
+
+.searchbar__input:hover {
+    width: 240px;
+}
+
+.searchbar__input:focus {
+    width: 280px;
+}
+
+/*PAGE TITLE AND SUBTITLE*/
+
+.page__title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    background: linear-gradient(120deg, #000000 0%, #000000 35%, #000000 70%, #000000 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: black;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.page__subtitle {
+    font-size: 1.0rem;
+    color: black;
+    margin-bottom: 1.5rem;
+    text-align: left;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Override global card/grid defaults so recipe cards don't overlap the header */
+.grid--recipes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.grid--recipes .card {
+    margin-top: 0;
+    /* cancel the negative margin from the global .card */
+    background: rgba(200, 84, 62, .10);
+}
+
+.recipe__title {
+    color: #000000;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 10px;
+}
+
+.recipe .btn--ghost {
+    background: rgb(0, 0, 0);
+    border: 2px solid #c38542;
+    color: #c38542;
+    padding: 0.5rem 1.2rem;
+    border-radius: 30px;
+}
+
+.recipe .btn--ghost:hover {
+    background: #c38542;
+    color: rgb(0, 0, 0);
+    box-shadow: #000000 0px 4px 15px;
+    border: #000000;
+}
