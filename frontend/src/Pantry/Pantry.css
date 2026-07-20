@@ -1,0 +1,370 @@
+.page {
+    /*background-color: #5a5f56;*/
+    background-color: #D0D9C7;
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #fefefe;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ========= HEADER SECTION ========= */
+.pantry-header {
+    margin-bottom: 1.5rem;
+}
+
+.page__title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #f8c794;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+.page__subtitle {
+    font-size: 1.1rem;
+    color: #321d1d;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* ========= SEARCH & CONTROLS ========= */
+.search-section {
+    margin-bottom: 1rem;
+}
+
+.searchbar {
+    display: flex;
+    background: rgb(255, 255, 255);
+    border-radius: 50px;
+    padding: 0.6rem 1.2rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+}
+
+
+.searchbar:hover,
+.searchbar:focus-within {
+    background: white;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.searchbar__icon {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+    color: #fff6e6;
+    flex-shrink: 0;
+}
+
+.searchbar__input {
+    border: none;
+    outline: none;
+    width: 100%;
+    background: transparent;
+    color: #000000;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.searchbar__input::placeholder {
+    color: #000000;
+    opacity: 0.8;
+}
+
+.scan-controls {
+    margin-top: 1.5rem;
+}
+
+/* ========= BUTTONS ========= */
+.btn {
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.25s ease;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn--solid {
+    background: rgb(0, 0, 0);
+    color: #bf8c35ff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn--solid:hover {
+    background: #bf8c35ff;
+    color: rgb(0, 0, 0);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.btn--solid:active {
+    transform: translateY(0);
+}
+
+.btn--ghost {
+    background: transparent;
+    border: 2px solid #e6b77a;
+    color: #e6b77a;
+}
+
+.btn--ghost:hover {
+    background: rgba(230, 183, 122, 0.2);
+    border-color: #f2ca8f;
+    color: #f2ca8f;
+}
+
+.btn.sm {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+/* ========= CARD STYLES ========= */
+.card {
+    background: rgba(150, 129, 103, 0.95);
+    color: #333;
+    border-radius: 20px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    backdrop-filter: blur(4px);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+/* ========= SCANNER SECTION ========= */
+.scanner-section,
+.error-section,
+.manual-add,
+.empty-state {
+    margin-top: 1.5rem;
+}
+
+.scanner-section {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.scanner-card video {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 350px;
+    /* Adjust if needed */
+    border-radius: 20px;
+}
+
+
+.scanner-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.manual-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.error-section {
+    max-width: 600px;
+    margin: 0.5rem auto 0;
+}
+
+
+video {
+    border-radius: 20px;
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    display: block;
+    object-fit: cover;
+    background-color: #000;
+}
+
+/* ========= ERROR SECTION ========= */
+.error-section {
+    margin-bottom: 2rem;
+}
+
+.error-message {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    color: #b21b1b;
+    font-weight: 500;
+    text-align: center;
+    backdrop-filter: blur(4px);
+}
+
+/* ========= MANUAL ADD FORM ========= */
+.manual-add {
+    margin-bottom: 2rem;
+}
+
+.manual-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255, 237, 215, 0.85);
+    flex-wrap: wrap;
+}
+
+.manual-form input {
+    flex: 1;
+    min-width: 200px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    outline: none;
+    color: #333;
+    font-family: inherit;
+}
+
+.manual-form input::placeholder {
+    color: #666;
+}
+
+/* ========= PANTRY ITEMS GRID ========= */
+.pantry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.pantry-item {
+    background: rgba(200, 84, 62, .10);
+    /*background:  rgba(0, 0, 0, 0.05);*/
+    border-radius: 16px;
+    padding: 1.2rem;
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border: 2px solid #ceb89b;
+}
+
+.pantry-item__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    color: #000;
+}
+
+.pantry-item__info {
+    flex: 1;
+
+}
+
+.pantry-item__content h3 {
+    color: #000000;
+    font-size: 1.1rem;
+    text-transform: capitalize;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+
+
+}
+
+.pantry-item__content p {
+    color: #000000;
+    font-size: 0.95rem;
+}
+
+.pantry-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* ========= EMPTY STATE ========= */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    max-width: 600px;
+    /* NEW */
+    margin: 0 auto;
+    /* NEW: centers the card */
+    background: rgba(225, 208, 173, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.empty-message {
+    color: #333;
+    font-size: 1.1rem;
+}
+
+/* ========= RESPONSIVE ========= */
+@media (max-width: 768px) {
+    .page {
+        padding: 1.5rem 1rem;
+    }
+
+    .page__title {
+        font-size: 2rem;
+        color: black;
+    }
+
+    .page__subtitle {
+        font-size: 1rem;
+    }
+
+    .searchbar {
+        max-width: 100%;
+    }
+
+    .scan-controls {
+        margin-top: 1rem;
+    }
+
+    .btn--solid {
+        width: 100%;
+    }
+
+    .pantry-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .manual-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .manual-form input {
+        min-width: 100%;
+    }
+
+    .btn.sm {
+        width: 100%;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .pantry-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
