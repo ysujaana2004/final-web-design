@@ -1,5 +1,4 @@
 const express = require("express");
-const { env } = require("../lib/env");
 const { supabase } = require("../lib/db");
 const {
   normalizeIngredientName,
@@ -25,10 +24,7 @@ function normalizeUserId(value) {
 }
 
 function resolvePantryUserId(req = {}) {
-  return normalizeUserId(req.body?.user_id)
-    || normalizeUserId(req.query?.user_id)
-    || env.devTestUserId
-    || "";
+  return normalizeUserId(req.user?.id);
 }
 
 function createPantryRouter(dependencies = {}) {
@@ -39,14 +35,13 @@ function createPantryRouter(dependencies = {}) {
   router.get("/", async (req, res, next) => {
     try {
       const userId = resolvePantryUserId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: "user_id is required"
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("pantry_items")
         .select(PANTRY_SELECT)
         .eq("user_id", userId);
@@ -66,14 +61,13 @@ function createPantryRouter(dependencies = {}) {
   router.get("/:id", async (req, res, next) => {
     try {
       const userId = resolvePantryUserId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: "user_id is required"
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("pantry_items")
         .select(PANTRY_SELECT)
         .eq("id", req.params.id)
@@ -102,15 +96,18 @@ function createPantryRouter(dependencies = {}) {
     try {
       const { ingredient, quantity, unit } = req.body;
       const userId = resolvePantryUserId(req);
+      const requestDatabase = req.supabase || database;
       const normalizedIngredient = normalizeIngredientName(ingredient);
 
-      if (!userId || !normalizedIngredient) {
-        return res.status(400).json({
-          error: "user_id and ingredient are required"
-        });
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      const ingredientId = await resolveOrCreateIngredientId(normalizedIngredient, database);
+      if (!normalizedIngredient) {
+        return res.status(400).json({ error: "An ingredient is required." });
+      }
+
+      const ingredientId = await resolveOrCreateIngredientId(normalizedIngredient, requestDatabase);
 
       const pantryItem = {
         user_id: userId,
@@ -119,7 +116,7 @@ function createPantryRouter(dependencies = {}) {
         unit: unit || null
       };
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("pantry_items")
         .insert([pantryItem])
         .select(PANTRY_SELECT)
@@ -141,11 +138,10 @@ function createPantryRouter(dependencies = {}) {
     try {
       const userId = resolvePantryUserId(req);
       const { quantity, unit } = req.body;
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: "user_id is required"
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
       // `undefined` means "not provided"; null or 0 are still valid updates.
@@ -165,7 +161,7 @@ function createPantryRouter(dependencies = {}) {
         updateFields.unit = unit || null;
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("pantry_items")
         .update(updateFields)
         .eq("id", req.params.id)
@@ -194,14 +190,13 @@ function createPantryRouter(dependencies = {}) {
   router.delete("/:id", async (req, res, next) => {
     try {
       const userId = resolvePantryUserId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: "user_id is required"
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("pantry_items")
         .delete()
         .eq("id", req.params.id)

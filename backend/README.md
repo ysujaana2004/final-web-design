@@ -7,9 +7,8 @@ Current status:
 - API routes are wired up
 - Downloader service can extract temporary audio from TikTok and Instagram video URLs
 - `POST /api/recipes` can turn a supported video URL into recipe JSON
-- Recipe CRUD is implemented and scoped by `user_id`
-- Pantry CRUD is implemented and scoped by `user_id`
-- Auth, users, and groceries are still placeholders only
+- Recipe, pantry, and grocery routes require a verified Supabase access token
+- The backend derives the user from that token; it never accepts a caller-supplied owner ID
 
 ### Setup
 
@@ -64,12 +63,17 @@ Data flow:
 
 `POST /api/recipes`
 
+All recipe, pantry, grocery, and database-health routes require this header:
+
+```http
+Authorization: Bearer <supabase-access-token>
+```
+
 Example request body:
 
 ```json
 {
-  "videoUrl": "https://www.instagram.com/reel/abc123/",
-  "user_id": "your-profile-uuid"
+  "videoUrl": "https://www.instagram.com/reel/abc123/"
 }
 ```
 
@@ -87,28 +91,22 @@ Example response shape:
 ```
 
 Other recipe routes:
-- `GET /api/recipes?user_id=...` returns only that user's recipes
-- `GET /api/recipes/:id?user_id=...` returns one owned recipe
-- `PUT /api/recipes/:id` updates one owned recipe; send `user_id` plus any of `title`, `source_url`, `instructions`, `ingredients`
-- `DELETE /api/recipes/:id?user_id=...` deletes one owned recipe
+- `GET /api/recipes` returns only the authenticated user's recipes
+- `GET /api/recipes/:id` returns one owned recipe
+- `PUT /api/recipes/:id` updates one owned recipe; send any of `title`, `source_url`, `instructions`, `ingredients`
+- `DELETE /api/recipes/:id` deletes one owned recipe
 
 ### Pantry endpoints
 
-- `GET /api/pantry?user_id=...` returns only that user's pantry items
-- `GET /api/pantry/:id?user_id=...` returns one owned pantry item
-- `POST /api/pantry` creates one pantry item; send `user_id` and `ingredient`
-- `PUT /api/pantry/:id` updates one owned pantry item; send `user_id` plus `quantity` and/or `unit`
-- `DELETE /api/pantry/:id?user_id=...` deletes one owned pantry item
-- Pantry routes fall back to `DEV_TEST_USER_ID` when `user_id` is omitted
+- `GET /api/pantry` returns only the authenticated user's pantry items
+- `GET /api/pantry/:id` returns one owned pantry item
+- `POST /api/pantry` creates one pantry item; send `ingredient`
+- `PUT /api/pantry/:id` updates one owned pantry item; send `quantity` and/or `unit`
+- `DELETE /api/pantry/:id` deletes one owned pantry item
 
 ### Groceries implementation notes
 
 Purpose:
 - Add a read-only `GET /api/groceries` endpoint for ranked grocery recommendations.
 
-What needs to be done:
-- Implement the route in `src/routes/groceries.js`.
-- Implement the comparison and ranking logic in `src/services/groceries.js`.
-- Add route tests in `test/unit/groceries-route.test.js`.
-- Add service tests in `test/unit/groceries-service.test.js`.
-- Return structured recommendation rows so the frontend can render strings like `tomatoes (unlocks 5 recipes)`.
+The endpoint is implemented in `src/routes/groceries.js` and returns recommendations only for the authenticated user's pantry and recipes.

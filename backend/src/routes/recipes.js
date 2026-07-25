@@ -1,6 +1,5 @@
 const express = require("express");
 
-const { env } = require("../lib/env");
 const { supabase } = require("../lib/db");
 const { resolveOrCreateIngredientId } = require("../lib/ingredients");
 const {
@@ -47,18 +46,7 @@ function normalizeUserId(value) {
 }
 
 function resolveRecipeOwnerId(request = {}) {
-  const bodyUserId = normalizeUserId(request.body?.user_id);
-  const queryUserId = normalizeUserId(request.query?.user_id);
-
-  if (bodyUserId) {
-    return bodyUserId;
-  }
-
-  if (queryUserId) {
-    return queryUserId;
-  }
-
-  return env.devTestUserId || null;
+  return normalizeUserId(request.user?.id) || null;
 }
 
 async function saveGeneratedRecipe({
@@ -137,14 +125,13 @@ function createRecipesRouter(dependencies = {}) {
   router.get("/", async (req, res, next) => {
     try {
       const userId = resolveRecipeOwnerId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: 'A "user_id" is required.'
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("recipes")
         .select(RECIPE_SELECT)
         .eq("created_by", userId)
@@ -165,14 +152,13 @@ function createRecipesRouter(dependencies = {}) {
   router.get("/:id", async (req, res, next) => {
     try {
       const userId = resolveRecipeOwnerId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: 'A "user_id" is required.'
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("recipes")
         .select(RECIPE_SELECT)
         .eq("id", req.params.id)
@@ -199,17 +185,18 @@ function createRecipesRouter(dependencies = {}) {
   router.post("/", async (req, res, next) => {
     const videoUrl = req.body?.videoUrl; // Avoids crashing if req.body is missing entirely.
     const userId = resolveRecipeOwnerId(req);
+    const requestDatabase = req.supabase || database;
 
-    if (typeof videoUrl !== "string" || !videoUrl.trim()) {
-      res.status(400).json({
-        error: 'A non-empty "videoUrl" string is required.'
+    if (!userId) {
+      res.status(401).json({
+        error: "Authentication is required."
       });
       return;
     }
 
-    if (!userId) {
+    if (typeof videoUrl !== "string" || !videoUrl.trim()) {
       res.status(400).json({
-        error: 'A "user_id" is required unless DEV_TEST_USER_ID is configured.'
+        error: 'A non-empty "videoUrl" string is required.'
       });
       return;
     }
@@ -226,7 +213,7 @@ function createRecipesRouter(dependencies = {}) {
         sourceUrl: downloadedAudio.sourceUrl,
         recipe,
         userId
-      });
+      }, requestDatabase);
 
       res.status(201).json({
         sourceUrl: downloadedAudio.sourceUrl,
@@ -259,11 +246,10 @@ function createRecipesRouter(dependencies = {}) {
   router.put("/:id", async (req, res, next) => {
     try {
       const userId = resolveRecipeOwnerId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: 'A "user_id" is required.'
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
       const updateFields = {};
@@ -329,7 +315,7 @@ function createRecipesRouter(dependencies = {}) {
         }
 
         // Build the replacement rows before deleting anything.
-        ingredientRows = await buildRecipeIngredientRows(req.params.id, ingredientLines, database);
+        ingredientRows = await buildRecipeIngredientRows(req.params.id, ingredientLines, requestDatabase);
       }
 
       if (Object.keys(updateFields).length === 0 && !shouldReplaceIngredients) {
@@ -339,7 +325,7 @@ function createRecipesRouter(dependencies = {}) {
       }
 
       // First confirm the recipe belongs to this user.
-      const { data: existingRecipe, error: existingRecipeError } = await database
+      const { data: existingRecipe, error: existingRecipeError } = await requestDatabase
         .from("recipes")
         .select("id")
         .eq("id", req.params.id)
@@ -355,7 +341,7 @@ function createRecipesRouter(dependencies = {}) {
       }
 
       if (Object.keys(updateFields).length > 0) {
-        const { error: updateError } = await database
+        const { error: updateError } = await requestDatabase
           .from("recipes")
           .update(updateFields)
           .eq("id", req.params.id)
@@ -365,21 +351,21 @@ function createRecipesRouter(dependencies = {}) {
       }
 
       if (shouldReplaceIngredients) {
-        const { error: deleteIngredientsError } = await database
+        const { error: deleteIngredientsError } = await requestDatabase
           .from("recipe_ingredients")
           .delete()
           .eq("recipe_id", req.params.id);
 
         if (deleteIngredientsError) throw deleteIngredientsError;
 
-        const { error: insertIngredientsError } = await database
+        const { error: insertIngredientsError } = await requestDatabase
           .from("recipe_ingredients")
           .insert(ingredientRows);
 
         if (insertIngredientsError) throw insertIngredientsError;
       }
 
-      const { data, error } = await database
+      const { data, error } = await requestDatabase
         .from("recipes")
         .select(RECIPE_SELECT)
         .eq("id", req.params.id)
@@ -401,15 +387,14 @@ function createRecipesRouter(dependencies = {}) {
   router.delete("/:id", async (req, res, next) => {
     try {
       const userId = resolveRecipeOwnerId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: 'A "user_id" is required.'
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
-      // Remove dependent ingredient rows first since the schema does not use ON DELETE CASCADE.
-      const { data: recipeToDelete, error: recipeLookupError } = await database
+      // Remove dependent ingredient rows before the recipe.
+      const { data: recipeToDelete, error: recipeLookupError } = await requestDatabase
         .from("recipes")
         .select("id")
         .eq("id", req.params.id)
@@ -424,14 +409,14 @@ function createRecipesRouter(dependencies = {}) {
         });
       }
 
-      const { error: deleteIngredientsError } = await database
+      const { error: deleteIngredientsError } = await requestDatabase
         .from("recipe_ingredients")
         .delete()
         .eq("recipe_id", req.params.id);
 
       if (deleteIngredientsError) throw deleteIngredientsError;
 
-      const { error: deleteRecipeError } = await database
+      const { error: deleteRecipeError } = await requestDatabase
         .from("recipes")
         .delete()
         .eq("id", req.params.id)
