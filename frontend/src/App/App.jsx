@@ -7,7 +7,6 @@ import Login from "../Login/Login.jsx";
 import GroceryList from "../Grocery List/GroceryList.jsx";
 import Dashboard from "../Dashboard/DashboardChart.jsx";
 
-
 function App() {
   return (
     <>
