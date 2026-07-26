@@ -53,11 +53,16 @@ function buildPantryMatchKeys(pantryItems = []) {
   return pantryMatchKeys;
 }
 
-function findSingleMissingIngredients(recipes = [], pantryMatchKeys = new Set()) {
-  const singleMissingIngredients = [];
+// Every missing ingredient is kept (so the grocery list is complete), but each
+// entry is tagged with whether it was the *only* thing missing from that
+// recipe. Only sole-missing entries count toward "unlock_count" below, so an
+// ingredient can show up on the list with a low/zero unlock count if it's
+// always missing alongside other ingredients.
+function findMissingIngredients(recipes = [], pantryMatchKeys = new Set()) {
+  const missingIngredients = [];
 
   for (const recipe of recipes) {
-    const missingIngredients = [];
+    const missingForRecipe = [];
     const seenMatchKeys = new Set();
 
     for (const recipeIngredient of recipe.recipe_ingredients || []) {
@@ -77,32 +82,32 @@ function findSingleMissingIngredients(recipes = [], pantryMatchKeys = new Set())
       seenMatchKeys.add(matchKey);
 
       if (!pantryMatchKeys.has(matchKey)) {
-        missingIngredients.push({
-          ingredientId,
-          ingredientName
-        });
+        missingForRecipe.push({ ingredientId, ingredientName });
       }
     }
 
-    if (missingIngredients.length === 1) {
-      singleMissingIngredients.push({
-        ingredientId: missingIngredients[0].ingredientId,
-        ingredientName: missingIngredients[0].ingredientName,
+    const wouldUnlockRecipe = missingForRecipe.length === 1;
+
+    for (const missing of missingForRecipe) {
+      missingIngredients.push({
+        ingredientId: missing.ingredientId,
+        ingredientName: missing.ingredientName,
         recipe: {
           id: recipe.id,
           title: recipe.title
-        }
+        },
+        wouldUnlockRecipe
       });
     }
   }
 
-  return singleMissingIngredients;
+  return missingIngredients;
 }
 
-function rankGroceries(singleMissingIngredients = []) {
+function rankGroceries(missingIngredients = []) {
   const groceriesByIngredient = new Map();
 
-  for (const item of singleMissingIngredients) {
+  for (const item of missingIngredients) {
     const normalizedName = normalizeIngredientName(item.ingredientName);
     const ingredientKey = item.ingredientId
       ? `id:${item.ingredientId}`
@@ -119,13 +124,18 @@ function rankGroceries(singleMissingIngredients = []) {
         ingredient_id: item.ingredientId,
         ingredient: item.ingredientName || normalizedName,
         recipes: [],
-        recipeIds: new Set()
+        recipeIds: new Set(),
+        // Tracks every recipe this ingredient is missing from, regardless of
+        // whether buying it alone would complete that recipe.
+        allRecipeIds: new Set()
       });
     }
 
     const grocery = groceriesByIngredient.get(ingredientKey);
 
-    if (!grocery.recipeIds.has(item.recipe.id)) {
+    grocery.allRecipeIds.add(item.recipe.id);
+
+    if (item.wouldUnlockRecipe && !grocery.recipeIds.has(item.recipe.id)) {
       grocery.recipeIds.add(item.recipe.id);
       grocery.recipes.push(item.recipe);
     }
@@ -136,11 +146,16 @@ function rankGroceries(singleMissingIngredients = []) {
       ingredient_id: grocery.ingredient_id,
       ingredient: grocery.ingredient,
       unlock_count: grocery.recipes.length,
+      recipe_count: grocery.allRecipeIds.size,
       recipes: grocery.recipes
     }))
     .sort((left, right) => {
       if (right.unlock_count !== left.unlock_count) {
         return right.unlock_count - left.unlock_count;
+      }
+
+      if (right.recipe_count !== left.recipe_count) {
+        return right.recipe_count - left.recipe_count;
       }
 
       return left.ingredient.localeCompare(right.ingredient);
@@ -180,9 +195,9 @@ async function buildGroceriesForUser(userId, database = supabase) {
   ]);
 
   const pantryMatchKeys = buildPantryMatchKeys(pantryItems);
-  const singleMissingIngredients = findSingleMissingIngredients(recipes, pantryMatchKeys);
+  const missingIngredients = findMissingIngredients(recipes, pantryMatchKeys);
 
-  return rankGroceries(singleMissingIngredients);
+  return rankGroceries(missingIngredients);
 }
 
 module.exports = {
@@ -190,6 +205,6 @@ module.exports = {
   buildPantryMatchKeys,
   fetchPantryItems,
   fetchRecipesWithIngredients,
-  findSingleMissingIngredients,
+  findMissingIngredients,
   rankGroceries
 };

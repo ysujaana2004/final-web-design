@@ -73,7 +73,9 @@
 
 .dash-card {
     /*background: linear-gradient(120deg, #fec195, #fec195, #D0D9C7, #D0D9C7 100%);*/
-    background-color: #bf8c35ff;
+    /*background-color: #bf8c35ff;*/
+    background: rgba(200, 84, 62, .10);
+    border: 2px solid #ceb89b;
     padding: 20px;
     border-radius: 14px;
     box-shadow: var(--shadow);
@@ -101,7 +103,8 @@
 }
 
 .dash-list {
-    background: #bf8c35ff;
+    background: rgba(200, 84, 62, .10);
+    border: 2px solid #ceb89b;
     border-radius: 14px;
     padding: 8px 0;
     box-shadow: var(--shadow);
@@ -112,7 +115,7 @@
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-    color: #181818;
+    color: #000000;
 }
 
 .dash-tag-item {
@@ -125,7 +128,7 @@
 
 .dash-link {
     font-weight: 600;
-    color: #000000;
+    color: rgb(94, 66, 17);
 }
 
 .dash-link:hover {
