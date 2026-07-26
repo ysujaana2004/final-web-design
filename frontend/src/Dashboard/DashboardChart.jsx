@@ -5,38 +5,7 @@ import "./DashboardChart.css";
 import Addreci from "../Buttons/AddReci.jsx";
 import ScanPantry from "../Buttons/ScanPantry.jsx";
 import GroceryButton from "../Buttons/GroceryButton.jsx";
-
-// --- MOCK API FUNCTIONS & DATA ---
-const mockRecipes = [
-  { id: 1, title: "Creamy Tomato Pasta" },
-  { id: 2, title: "Spicy Chicken Curry" },
-  { id: 3, title: "Garlic Butter Steak" },
-];
-
-const mockPantryItems = [
-  { id: 1, ingredient_name: "Olive Oil", quantity: 1, unit: "bottle" },
-  { id: 2, ingredient_name: "Salt", quantity: 500, unit: "g" },
-  { id: 3, ingredient_name: "Black Pepper", quantity: 100, unit: "g" },
-];
-
-const mockRecommendations = [
-  { id: "milk", label: "Whole milk (1 gal)" },
-  { id: "eggs", label: "Eggs (dozen)" },
-  { id: "bread", label: "Whole wheat bread" }
-];
-
-const getAllRecipes = async () => {
-  return new Promise((resolve) => setTimeout(() => resolve(mockRecipes), 500));
-};
-
-const getPantryItems = async () => {
-  return new Promise((resolve) => setTimeout(() => resolve(mockPantryItems), 500));
-};
-
-const getRecommendations = async () => {
-  return new Promise((resolve) => setTimeout(() => resolve(mockRecommendations), 500));
-};
-// ---------------------------------
+import { getGroceries, getPantryItems, getRecipes } from "../lib/api";
 
 export default function Dashboard() {
   const username = "Osama";
@@ -46,50 +15,32 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = useCallback(async (signal) => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [recipeData, pantryData, recommendationData] = await Promise.all([
-        getAllRecipes({ signal }),
-        getPantryItems({ signal }),
-        getRecommendations(),
+      const [recipeResult, pantryResult, groceryResult] = await Promise.all([
+        getRecipes(),
+        getPantryItems(),
+        getGroceries(),
       ]);
-      setRecipes(Array.isArray(recipeData) ? recipeData : []);
-      setPantryItems(Array.isArray(pantryData) ? pantryData : []);
-      setRecommendations(Array.isArray(recommendationData) ? recommendationData : []);
+      setRecipes(recipeResult.data || []);
+      setPantryItems(pantryResult.data || []);
+      setRecommendations(groceryResult.data || []);
       setError(null);
     } catch (err) {
-      if (err.name !== "AbortError") {
-        setError(err);
-      }
+      setError(err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchData(controller.signal);
-    return () => controller.abort();
+    fetchData();
   }, [fetchData]);
 
-  const refreshRecommendations = useCallback(async () => {
-    try {
-      const recs = await getRecommendations();
-      setRecommendations(Array.isArray(recs) ? recs : []);
-    } catch (err) {
-      console.error("Failed to refresh recommendations", err);
-    }
-  }, []);
-
-  const handleRecipeCreated = useCallback(
-    (recipe) => {
-      if (!recipe) return;
-      setRecipes((prev) => [recipe, ...prev.filter((r) => r.id !== recipe.id)]);
-      refreshRecommendations();
-    },
-    [refreshRecommendations]
-  );
+  const handleRecipeCreated = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   const recentRecipes = recipes.slice(0, 3);
   const pantryPreview = pantryItems.slice(0, 3);
@@ -127,21 +78,21 @@ export default function Dashboard() {
       {/* ===== Stats Section ===== */}
       <section className="dash-section dash-stats">
         <div className="dash-card">
-          <h3>📘 Recipes</h3>
+          <h3>Recipes</h3>
           <p className="dash-number">
             {loading ? "…" : `${recipes.length} Saved`}
           </p>
         </div>
 
         <div className="dash-card">
-          <h3>🧰 Pantry Items</h3>
+          <h3>Pantry Items</h3>
           <p className="dash-number">
             {loading ? "…" : `${pantryItems.length} Items`}
           </p>
         </div>
 
         <div className="dash-card">
-          <h3>🛒 Grocery Needed</h3>
+          <h3>Grocery Needed</h3>
           <p className="dash-number">
             {loading ? "…" : `${recommendations.length} Items`}
           </p>
@@ -181,8 +132,8 @@ export default function Dashboard() {
             <p className="muted">Loading pantry…</p>
           ) : pantryPreview.length ? (
             pantryPreview.map((item) => (
-              <div className="dash-list-item" key={item.id ?? item.ingredient_name}>
-                <p>{item.ingredient_name}</p>
+              <div className="dash-list-item" key={item.id}>
+                <p>{item.ingredients?.name}</p>
                 <span className="dash-tag">
                   {item.quantity} {item.unit}
                 </span>

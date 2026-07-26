@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const {
   buildGroceriesForUser,
   buildPantryMatchKeys,
-  findSingleMissingIngredients,
+  findMissingIngredients,
   rankGroceries
 } = require("../../src/services/groceries");
 
@@ -22,9 +22,9 @@ test("buildPantryMatchKeys includes both canonical id keys and normalized name k
   assert.equal(pantryMatchKeys.has("name:heavy cream"), true);
 });
 
-test("findSingleMissingIngredients dedupes recipe ingredients and keeps only one-away recipes", () => {
+test("findMissingIngredients keeps every missing ingredient, tagging only sole-missing ones as wouldUnlockRecipe", () => {
   const pantryMatchKeys = new Set(["id:ingredient-1"]);
-  const singleMissingResults = findSingleMissingIngredients(
+  const missingResults = findMissingIngredients(
     [
       {
         id: "recipe-1",
@@ -94,14 +94,33 @@ test("findSingleMissingIngredients dedupes recipe ingredients and keeps only one
     pantryMatchKeys
   );
 
-  assert.deepEqual(singleMissingResults, [
+  assert.deepEqual(missingResults, [
     {
       ingredientId: "ingredient-2",
       ingredientName: "salt",
       recipe: {
         id: "recipe-1",
         title: "Unlockable Pasta"
-      }
+      },
+      wouldUnlockRecipe: true
+    },
+    {
+      ingredientId: "ingredient-2",
+      ingredientName: "salt",
+      recipe: {
+        id: "recipe-3",
+        title: "Missing Too Much"
+      },
+      wouldUnlockRecipe: false
+    },
+    {
+      ingredientId: "ingredient-3",
+      ingredientName: "pepper",
+      recipe: {
+        id: "recipe-3",
+        title: "Missing Too Much"
+      },
+      wouldUnlockRecipe: false
     },
     {
       ingredientId: "ingredient-2",
@@ -109,12 +128,13 @@ test("findSingleMissingIngredients dedupes recipe ingredients and keeps only one
       recipe: {
         id: "recipe-4",
         title: "Duplicate Ingredient Rows"
-      }
+      },
+      wouldUnlockRecipe: true
     }
   ]);
 });
 
-test("rankGroceries aggregates recipes by ingredient and sorts by count then name", () => {
+test("rankGroceries aggregates only sole-missing recipes into unlock_count, but keeps every ingredient", () => {
   const rankedRecommendations = rankGroceries([
     {
       ingredientId: "ingredient-2",
@@ -122,7 +142,8 @@ test("rankGroceries aggregates recipes by ingredient and sorts by count then nam
       recipe: {
         id: "recipe-1",
         title: "Recipe One"
-      }
+      },
+      wouldUnlockRecipe: true
     },
     {
       ingredientId: "ingredient-2",
@@ -130,7 +151,8 @@ test("rankGroceries aggregates recipes by ingredient and sorts by count then nam
       recipe: {
         id: "recipe-2",
         title: "Recipe Two"
-      }
+      },
+      wouldUnlockRecipe: true
     },
     {
       ingredientId: "ingredient-3",
@@ -138,7 +160,35 @@ test("rankGroceries aggregates recipes by ingredient and sorts by count then nam
       recipe: {
         id: "recipe-3",
         title: "Recipe Three"
-      }
+      },
+      wouldUnlockRecipe: true
+    },
+    {
+      ingredientId: "ingredient-4",
+      ingredientName: "pepper",
+      recipe: {
+        id: "recipe-4",
+        title: "Recipe Four"
+      },
+      wouldUnlockRecipe: false
+    },
+    {
+      ingredientId: "ingredient-5",
+      ingredientName: "carrots",
+      recipe: {
+        id: "recipe-5",
+        title: "Recipe Five"
+      },
+      wouldUnlockRecipe: false
+    },
+    {
+      ingredientId: "ingredient-5",
+      ingredientName: "carrots",
+      recipe: {
+        id: "recipe-6",
+        title: "Recipe Six"
+      },
+      wouldUnlockRecipe: false
     }
   ]);
 
@@ -147,6 +197,7 @@ test("rankGroceries aggregates recipes by ingredient and sorts by count then nam
       ingredient_id: "ingredient-2",
       ingredient: "salt",
       unlock_count: 2,
+      recipe_count: 2,
       recipes: [
         { id: "recipe-1", title: "Recipe One" },
         { id: "recipe-2", title: "Recipe Two" }
@@ -156,9 +207,24 @@ test("rankGroceries aggregates recipes by ingredient and sorts by count then nam
       ingredient_id: "ingredient-3",
       ingredient: "apples",
       unlock_count: 1,
+      recipe_count: 1,
       recipes: [
         { id: "recipe-3", title: "Recipe Three" }
       ]
+    },
+    {
+      ingredient_id: "ingredient-5",
+      ingredient: "carrots",
+      unlock_count: 0,
+      recipe_count: 2,
+      recipes: []
+    },
+    {
+      ingredient_id: "ingredient-4",
+      ingredient: "pepper",
+      unlock_count: 0,
+      recipe_count: 1,
+      recipes: []
     }
   ]);
 });
@@ -270,9 +336,22 @@ test("buildGroceriesForUser compares pantry and recipes end-to-end, including ra
 
   assert.deepEqual(recommendations, [
     {
+      ingredient_id: "ingredient-2",
+      ingredient: "salt",
+      unlock_count: 1,
+      recipe_count: 2,
+      recipes: [
+        {
+          id: "recipe-1",
+          title: "Tomato Soup"
+        }
+      ]
+    },
+    {
       ingredient_id: null,
       ingredient: "heavy cream",
       unlock_count: 1,
+      recipe_count: 1,
       recipes: [
         {
           id: "recipe-2",
@@ -281,20 +360,16 @@ test("buildGroceriesForUser compares pantry and recipes end-to-end, including ra
       ]
     },
     {
-      ingredient_id: "ingredient-2",
-      ingredient: "salt",
-      unlock_count: 1,
-      recipes: [
-        {
-          id: "recipe-1",
-          title: "Tomato Soup"
-        }
-      ]
+      ingredient_id: "ingredient-3",
+      ingredient: "pepper",
+      unlock_count: 0,
+      recipe_count: 1,
+      recipes: []
     }
   ]);
 });
 
-test("buildGroceriesForUser returns an empty list when nothing is singly unlockable", async () => {
+test("buildGroceriesForUser still lists ingredients that never singly unlock a recipe, with unlock_count 0", async () => {
   const recommendations = await buildGroceriesForUser("user-123", {
     from(tableName) {
       if (tableName === "pantry_items") {
@@ -348,5 +423,20 @@ test("buildGroceriesForUser returns an empty list when nothing is singly unlocka
     }
   });
 
-  assert.deepEqual(recommendations, []);
+  assert.deepEqual(recommendations, [
+    {
+      ingredient_id: "ingredient-2",
+      ingredient: "salt",
+      unlock_count: 0,
+      recipe_count: 1,
+      recipes: []
+    },
+    {
+      ingredient_id: "ingredient-1",
+      ingredient: "tomatoes",
+      unlock_count: 0,
+      recipe_count: 1,
+      recipes: []
+    }
+  ]);
 });

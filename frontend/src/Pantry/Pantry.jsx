@@ -1,39 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import "./Pantry.css";
 import Footer from "../Footer/Footer";
-
-let mockPantryData = [
-  { id: "1", ingredient_name: "Olive Oil", quantity: 1, unit: "bottle" },
-  { id: "2", ingredient_name: "Salt", quantity: 500, unit: "g" },
-  { id: "3", ingredient_name: "Black Pepper", quantity: 100, unit: "g" },
-  { id: "4", ingredient_name: "Basmati Rice", quantity: 2, unit: "kg" },
-  { id: "5", ingredient_name: "Spaghetti", quantity: 500, unit: "g" },
-  { id: "6", ingredient_name: "Tomato Sauce", quantity: 2, unit: "cans" }
-];
-
-const getPantryItems = async () => {
-  return new Promise((resolve) => setTimeout(() => resolve([...mockPantryData]), 500));
-};
-
-const addPantryItem = async (item) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newItem = { id: Date.now().toString(), ...item };
-      mockPantryData.push(newItem);
-      resolve(newItem);
-    }, 500);
-  });
-};
-
-const deletePantryItem = async (id) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      mockPantryData = mockPantryData.filter(item => item.id !== id);
-      resolve({ success: true });
-    }, 500);
-  });
-};
 import DeleteButton from "../Buttons/DeleteButton";
+import {
+  createPantryItem,
+  deletePantryItem,
+  getPantryItems,
+} from "../lib/api";
 
 
 export default function Pantry() {
@@ -47,6 +20,11 @@ export default function Pantry() {
   const rafRef = useRef(0);
   const detectorRef = useRef(null);
   const [manualCode, setManualCode] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newIngredient, setNewIngredient] = useState("");
+  const [newQuantity, setNewQuantity] = useState("");
+  const [newUnit, setNewUnit] = useState("");
+  const [savingItem, setSavingItem] = useState(false);
 
   // Fetch pantry items on component mount
   useEffect(() => {
@@ -57,8 +35,8 @@ export default function Pantry() {
     setLoading(true);
     setError("");
     try {
-      const data = await getPantryItems();
-      setItems(data || []);
+      const result = await getPantryItems();
+      setItems(result.data || []);
     } catch (err) {
       console.error("Failed to fetch pantry items:", err);
       setError(err.message || "Failed to load pantry items");
@@ -145,17 +123,21 @@ export default function Pantry() {
 
     try {
       // Save to backend
-      const savedItem = await addPantryItem({
-        ingredient_name: product.title,
+      await createPantryItem({
+        ingredient: product.title,
         quantity: 1,
-        unit: "pieces"
+        unit: "pieces",
       });
 
-      // Add to local state
-      setItems((prev) => [savedItem, ...prev]);
+      // Refresh from backend so the new item includes joined ingredient data
+      await fetchPantryItems();
     } catch (err) {
       console.error("Failed to add item:", err);
-      setError(err.message || "Failed to add item to pantry");
+      if (err.message.includes("pantry_items_user_ingredient_unique")) {
+        setError("That ingredient is already in your pantry.");
+      } else {
+        setError(err.message || "Failed to add item to pantry");
+      }
     }
   };
 
@@ -183,7 +165,7 @@ export default function Pantry() {
   };
 
   const filtered = items.filter((it) =>
-    (it.ingredient_name || "")
+    (it.ingredients?.name || "")
       .toLowerCase()
       .includes(query.toLowerCase())
   );
@@ -193,6 +175,39 @@ export default function Pantry() {
     if (!manualCode.trim()) return;
     await handleDetectedBarcode(manualCode.trim());
     setManualCode("");
+  };
+
+  // Add an item directly by name, skipping the barcode/mockLookup step
+  // entirely so it doesn't get stuck with a placeholder "Item ####" name.
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    if (!newIngredient.trim()) return;
+
+    try {
+      setSavingItem(true);
+      setError("");
+
+      await createPantryItem({
+        ingredient: newIngredient.trim(),
+        quantity: newQuantity || null,
+        unit: newUnit || null,
+      });
+
+      setNewIngredient("");
+      setNewQuantity("");
+      setNewUnit("");
+      setShowAddForm(false);
+      await fetchPantryItems();
+    } catch (err) {
+      console.error("Failed to add item:", err);
+      if (err.message.includes("pantry_items_user_ingredient_unique")) {
+        setError("That ingredient is already in your pantry.");
+      } else {
+        setError(err.message || "Failed to add item to pantry");
+      }
+    } finally {
+      setSavingItem(false);
+    }
   };
 
   return (
@@ -227,10 +242,16 @@ export default function Pantry() {
                 Scan Barcode
               </button>
             ) : (
-              <button className="btn btn--ghost" onClick={stopScan}>
+              <button className="btn btn--solid" onClick={stopScan}>
                 Stop
               </button>
             )}
+            <button
+              className="btn btn--solid"
+              onClick={() => setShowAddForm((prev) => !prev)}
+            >
+              {showAddForm ? "Cancel" : "Add Item"}
+            </button>
           </div>
         </div>
 
@@ -240,6 +261,35 @@ export default function Pantry() {
             <div className="card scanner-card">
               <video ref={videoRef} autoPlay playsInline muted />
             </div>
+          </section>
+        )}
+
+        {/* Add item by name, bypassing barcode lookup entirely */}
+        {showAddForm && (
+          <section className="manual-add">
+            <form onSubmit={handleAddItem} className="card manual-form">
+              <input
+                className="searchbar__input"
+                placeholder="Ingredient name"
+                value={newIngredient}
+                onChange={(e) => setNewIngredient(e.target.value)}
+              />
+              <input
+                className="searchbar__input"
+                placeholder="Quantity"
+                value={newQuantity}
+                onChange={(e) => setNewQuantity(e.target.value)}
+              />
+              <input
+                className="searchbar__input"
+                placeholder="Unit"
+                value={newUnit}
+                onChange={(e) => setNewUnit(e.target.value)}
+              />
+              <button className="btn btn--solid sm" type="submit" disabled={savingItem}>
+                {savingItem ? "Adding..." : "Add"}
+              </button>
+            </form>
           </section>
         )}
 
@@ -288,7 +338,7 @@ export default function Pantry() {
               <article key={it.id} className="card pantry-item">
                 <div className="pantry-item__content">
                   <div className="pantry-item__info">
-                    <h3>{it.ingredient_name}</h3>
+                    <h3>{it.ingredients?.name}</h3>
                     <p>
                       Quantity: {it.quantity} {it.unit}
                     </p>

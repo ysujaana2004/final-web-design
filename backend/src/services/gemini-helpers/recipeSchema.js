@@ -6,20 +6,23 @@ const recipeSchema = {
   properties: {
     title: {
       type: "string",
-      description: "The name of the recipe."
+      description: "The name of the recipe.",
+      minLength: 1
     },
     ingredients: {
       type: "array",
       description: "A list of ingredient lines.",
       items: {
-        type: "string"
+        type: "string",
+        minLength: 1
       }
     },
     instructions: {
       type: "array",
       description: "A list of step-by-step cooking instructions.",
       items: {
-        type: "string"
+        type: "string",
+        minLength: 1
       }
     }
   }
