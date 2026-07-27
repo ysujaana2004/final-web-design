@@ -1,63 +1,45 @@
-import React, { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import "./GroceryList.css";
 import AnimatedCheckbox from "./card.jsx";
 import Footer from "../Footer/Footer.jsx";
-// import { getRecommendations } from "../../api_funcs/grocery.js";
-const getRecommendations = async () => {
-    return [
-        { ingredient: "milk", unlocks: 2 },
-        { ingredient: "eggs", unlocks: 1 }
-    ];
-};
+import { getGroceries } from "../lib/api";
 
-
-// Call the grocery reccoemdmnder logic from api_funcs/grocery.js (which calls the backend - grocery.py)
 export default function GroceryList() {
     const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         let cancelled = false;
-        (async () => {
-            try {
-                const recommended = await getRecommendations();
-                const normalized = recommended.map(({ ingredient, unlocks }) => ({
-                    id: ingredient,
-                    label: `${ingredient} (unlocks ${unlocks} recipe${unlocks === 1 ? "" : "s"})`,
-                }));
-                if (!cancelled) setItems(normalized);
 
+        async function loadGroceries() {
+            try {
+                setLoading(true);
+                setError("");
+
+                const result = await getGroceries();
+                const normalized = (result.data || []).map(
+                    ({ ingredient_id, ingredient, unlock_count, recipe_count }) => ({
+                        id: ingredient_id || ingredient,
+                        unlockCount: unlock_count,
+                        label: unlock_count > 0
+                            ? `${ingredient} (unlocks ${unlock_count} recipe${unlock_count === 1 ? "" : "s"})`
+                            : `${ingredient} (shows up in ${recipe_count} recipe${recipe_count === 1 ? "" : "s"})`,
+                    })
+                );
+
+                if (!cancelled) setItems(normalized);
             } catch (err) {
                 console.error("Failed to load grocery list", err);
-                if (!cancelled) setItems([]);
+                if (!cancelled) setError(err.message);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-        })();
+        }
+
+        loadGroceries();
         return () => { cancelled = true; };
     }, []);
-
-
-    // Display fake data
-    useEffect(() => {
-        async function load() {
-            const recommended = [
-                { id: "milk", label: "Whole milk (1 gal)" },
-                { id: "eggs", label: "Eggs (dozen)" },
-                { id: "pasta", label: "Spaghetti pasta" },
-                { id: "tomato-sauce", label: "Tomato sauce" },
-
-                // EXTRA FAKE TEST DATA
-                { id: "bread", label: "Whole wheat bread" },
-                { id: "butter", label: "Salted butter" },
-                { id: "rice", label: "Long grain rice" },
-                { id: "chicken", label: "Chicken breast (2 lb)" },
-                { id: "apples", label: "Apples (6 pack)" },
-                { id: "spinach", label: "Fresh spinach (1 bag)" }
-            ];
-
-            setItems(recommended);
-        }
-        load();
-    }, []);
-
 
     const handleCheck = (id) => {
         setItems((prev) => prev.filter((it) => it.id !== id));
@@ -71,25 +53,36 @@ export default function GroceryList() {
                     Here are the ingredients our AI recommends you to buy based on your pantry.
                 </p>
 
+                {error && <p className="grocery-empty">{error}</p>}
+
                 <div className="grocery-card">
-                    {items.length === 0 ? (
+                    {loading ? (
+                        <p className="grocery-empty">Loading groceries...</p>
+                    ) : items.length === 0 ? (
                         <p className="grocery-empty">Your list is empty.</p>
                     ) : (
                         <ul className="grocery-list">
-                            {items.map((item) => (
-                                <li key={item.id} className="grocery-item">
-                                    <AnimatedCheckbox
-                                        id={item.id}
-                                        label={item.label}
-                                        onChange={() => handleCheck(item.id)}
-                                    />
-                                </li>
+                            {items.map((item, index) => (
+                                <Fragment key={item.id}>
+                                    {index === dividerIndex && dividerIndex > 0 && (
+                                        <li className="grocery-divider" role="separator">
+                                            <span>Other missing ingredients</span>
+                                        </li>
+                                    )}
+                                    <li className="grocery-item">
+                                        <AnimatedCheckbox
+                                            id={item.id}
+                                            label={item.label}
+                                            onChange={() => handleCheck(item.id)}
+                                        />
+                                    </li>
+                                </Fragment>
                             ))}
                         </ul>
                     )}
                 </div>
             </div>
+            <Footer />
         </main>
     );
-    <Footer />
 }
