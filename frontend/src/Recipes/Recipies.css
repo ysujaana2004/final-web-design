@@ -77,6 +77,12 @@
     font-size: 10px;
 }
 
+.recipe__ingredient-count {
+    font-weight: normal;
+    font-size: 0.85em;
+    color: #6f6050;
+}
+
 .recipe .btn--ghost {
     background: rgb(0, 0, 0);
     border: 2px solid #c38542;
@@ -90,4 +96,9 @@
     color: rgb(0, 0, 0);
     box-shadow: #000000 0px 4px 15px;
     border: #000000;
+}
+
+.recipe__ingredient-count {
+    color: black;
+    font-size: 14px;
 }

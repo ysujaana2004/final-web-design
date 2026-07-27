@@ -1,10 +1,14 @@
 .grocery-page {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   padding-top: 100px;
   background: #D0D9C7;
   min-height: 100vh;
+}
+
+.grocery-page > footer {
+  width: 100%;
 }
 
 .grocery-container {
@@ -78,6 +82,26 @@ font-family: Verdana, Geneva, Tahoma, sans-serif;*/
 
 .grocery-item:last-child {
   border-bottom: none;
+}
+
+.grocery-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  color: #6f6050;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grocery-divider::before,
+.grocery-divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: rgba(60, 42, 20, 0.25);
 }
 
 .grocery-check {
