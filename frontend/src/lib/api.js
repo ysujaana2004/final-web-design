@@ -51,6 +51,10 @@ export function getRecipes() {
   return request(`/recipes?user_id=${encodeURIComponent(USER_ID)}`);
 }
 
+export function getRecipeById(id) {
+  return request(`/recipes/${id}?user_id=${encodeURIComponent(USER_ID)}`);
+}
+
 export function createRecipeFromVideo(videoUrl) {
   return request("/recipes", {
     method: "POST",

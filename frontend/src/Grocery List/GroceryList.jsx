@@ -45,15 +45,10 @@ export default function GroceryList() {
         setItems((prev) => prev.filter((it) => it.id !== id));
     };
 
-    // Items are sorted by the backend so every unlocking ingredient comes
-    // before every non-unlocking one; find where that split happens so we
-    // can draw a divider between the two groups.
-    const dividerIndex = items.findIndex((item) => item.unlockCount === 0);
-
     return (
         <main className="grocery-page">
             <div className="grocery-container">
-                <h1 className="grocery-title"> Grocery List</h1>
+                <h1 className="grocery-title">🛒 Grocery List</h1>
                 <p className="grocery-subtitle">
                     Here are the ingredients our AI recommends you to buy based on your pantry.
                 </p>

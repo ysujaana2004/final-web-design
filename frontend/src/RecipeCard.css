@@ -1,0 +1,142 @@
+/* Do NOT style .page here – it’s global and used across the app */
+/* This file only styles the recipe detail card itself. */
+
+/* Back link */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #2e5c3f;
+    text-decoration: none;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.back-link:hover {
+    color: #234630;
+    transform: translateX(-2px);
+}
+
+/* The recipe detail card */
+.recipe-detail.card {
+    background: rgba(54, 30, 30, 0.05);
+    /* warm brown */
+    border-radius: 1.5rem;
+    padding: 2.25rem 2.5rem;
+    box-shadow:
+        0 18px 40px rgb(171, 167, 160);
+    color: #2a1b12;
+    max-width: 800px;
+    margin: 0 auto;
+    /* center card in the page */
+}
+
+/* Header */
+.recipe-detail__head {
+    margin-bottom: 1.75rem;
+}
+
+.recipe-detail__title {
+    font-size: 2.2rem;
+    line-height: 1.1;
+    margin: 0 0 0.35rem;
+    letter-spacing: 0.02em;
+    color: rgb(0, 0, 0);
+}
+
+.recipe-detail__author {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #5b2707;
+}
+
+/* Caption / transcript text */
+.recipe-detail__transcript {
+    font-size: 0.98rem;
+    line-height: 1.6;
+    margin: 0 0 1.75rem;
+    color: #38231a;
+}
+
+/* Sections (ingredients / instructions) */
+.recipe-detail__section {
+    margin-bottom: 2rem;
+}
+
+.recipe-detail__section:last-of-type {
+    margin-bottom: 0;
+}
+
+.recipe-detail__section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #2b1810;
+}
+
+/* Lists */
+.recipe-detail__list {
+    margin: 0;
+    padding-left: 1.2rem;
+    font-size: 0.98rem;
+    line-height: 1.7;
+}
+
+.recipe-detail__list li+li {
+    margin-top: 0.25rem;
+}
+
+.recipe-detail__have-check {
+    color: #000000;
+    font-weight: 700;
+}
+
+/* Muted text */
+.muted,
+.recipe-detail__muted {
+    color: #6a4c3c;
+    font-size: 0.95rem;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .recipe-detail.card {
+        padding: 1.75rem 1.6rem;
+        border-radius: 1.1rem;
+    }
+
+    .recipe-detail__title {
+        font-size: 1.9rem;
+    }
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #000000;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 8px 14px;
+    border-radius: 10px;
+
+    font-weight: 600;
+    font-size: 0.95rem;
+
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1.5px solid #cddfcf;
+}
+
+.back-link:hover {
+    background: #000000;
+    border-color: #b8d0bd;
+    color: #b8d0bd;
+    transform: translateX(-2px);
+    text-decoration: none;
+
+}
