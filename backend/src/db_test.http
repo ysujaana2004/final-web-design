@@ -1,0 +1,39 @@
+
+
+
+
+@accessToken = replace-with-a-supabase-access-token
+
+POST http://127.0.0.1:3001/api/pantry
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "ingredient": "rice",
+  "quantity": 3,
+  "unit": "cups"
+}
+###
+
+PUT http://127.0.0.1:3001/api/pantry/b55ef89c-9011-49bc-b650-e9ed312b57b6
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "quantity": 10,
+  "unit": "cups"
+}
+
+###
+DELETE http://127.0.0.1:3001/api/pantry/b55ef89c-9011-49bc-b650-e9ed312b57b6
+Authorization: Bearer {{accessToken}}
+
+
+### Generate a recipe from a video
+POST http://localhost:3001/api/recipes
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "videoUrl": "https://www.tiktok.com/@zachs.foods/video/7595255804333149470?is_from_webapp=1&sender_device=pc&web_id=7368969865024390702"
+}

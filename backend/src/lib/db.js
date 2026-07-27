@@ -3,7 +3,29 @@ const { env } = require("./env");
 
 const supabase = createClient(
   env.supabaseUrl,
-  env.supabaseAnonKey
+  env.supabaseAnonKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
+    }
+  }
 );
 
-module.exports = { supabase };
+function createUserScopedSupabase(accessToken) {
+  return createClient(env.supabaseUrl, env.supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  });
+}
+
+module.exports = { createUserScopedSupabase, supabase };

@@ -2,13 +2,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { createPantryRouter } = require("../../src/routes/pantry");
-const { env } = require("../../src/lib/env");
 const {
   createMockResponse,
   getRouteHandler
 } = require("./helpers/http");
 
-test("GET /api/pantry requires a user_id and filters pantry rows by that user", async () => {
+test("GET /api/pantry filters pantry rows by the authenticated user", async () => {
   let receivedUserId = null;
   const router = createPantryRouter({
     supabase: {
@@ -43,9 +42,7 @@ test("GET /api/pantry requires a user_id and filters pantry rows by that user", 
 
   await handler(
     {
-      query: {
-        user_id: " user-123 "
-      }
+      user: { id: " user-123 " }
     },
     response,
     () => {}
@@ -56,9 +53,7 @@ test("GET /api/pantry requires a user_id and filters pantry rows by that user", 
   assert.equal(response.body.data[0].user_id, "user-123");
 });
 
-test("GET /api/pantry falls back to DEV_TEST_USER_ID when request user_id is missing", async () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "dev-user-123";
+test("GET /api/pantry uses the authenticated user", async () => {
   let receivedUserId = null;
 
   const router = createPantryRouter({
@@ -85,11 +80,10 @@ test("GET /api/pantry falls back to DEV_TEST_USER_ID when request user_id is mis
   const handler = getRouteHandler(router, "get", "/");
   const response = createMockResponse();
 
-  await handler({}, response, () => {});
+  await handler({ user: { id: "dev-user-123" } }, response, () => {});
 
   assert.equal(receivedUserId, "dev-user-123");
   assert.equal(response.statusCode, 200);
-  env.devTestUserId = originalDevTestUserId;
 });
 
 test("GET /api/pantry/:id returns 404 when the item does not belong to that user", async () => {
@@ -132,9 +126,7 @@ test("GET /api/pantry/:id returns 404 when the item does not belong to that user
       params: {
         id: "pantry-404"
       },
-      query: {
-        user_id: "user-123"
-      }
+      user: { id: "user-123" }
     },
     response,
     () => {}

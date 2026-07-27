@@ -2,62 +2,34 @@ import React, { useEffect, useState } from "react";
 import "./GroceryList.css";
 import AnimatedCheckbox from "./card.jsx";
 import Footer from "../Footer/Footer.jsx";
-// import { getRecommendations } from "../../api_funcs/grocery.js";
-const getRecommendations = async () => {
-    return [
-        { ingredient: "milk", unlocks: 2 },
-        { ingredient: "eggs", unlocks: 1 }
-    ];
-};
+import { getGroceries } from "../lib/api.js";
 
-
-// Call the grocery reccoemdmnder logic from api_funcs/grocery.js (which calls the backend - grocery.py)
 export default function GroceryList() {
     const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
         (async () => {
             try {
-                const recommended = await getRecommendations();
-                const normalized = recommended.map(({ ingredient, unlocks }) => ({
-                    id: ingredient,
-                    label: `${ingredient} (unlocks ${unlocks} recipe${unlocks === 1 ? "" : "s"})`,
+                const { data } = await getGroceries();
+                const normalized = (data || []).map((grocery) => ({
+                    id: grocery.ingredient_id || grocery.ingredient,
+                    label: grocery.unlock_count > 0
+                        ? `${grocery.ingredient} (unlocks ${grocery.unlock_count} recipe${grocery.unlock_count === 1 ? "" : "s"})`
+                        : grocery.ingredient,
                 }));
                 if (!cancelled) setItems(normalized);
-
             } catch (err) {
                 console.error("Failed to load grocery list", err);
-                if (!cancelled) setItems([]);
+                if (!cancelled) setError(err);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
         })();
         return () => { cancelled = true; };
     }, []);
-
-
-    // Display fake data
-    useEffect(() => {
-        async function load() {
-            const recommended = [
-                { id: "milk", label: "Whole milk (1 gal)" },
-                { id: "eggs", label: "Eggs (dozen)" },
-                { id: "pasta", label: "Spaghetti pasta" },
-                { id: "tomato-sauce", label: "Tomato sauce" },
-
-                // EXTRA FAKE TEST DATA
-                { id: "bread", label: "Whole wheat bread" },
-                { id: "butter", label: "Salted butter" },
-                { id: "rice", label: "Long grain rice" },
-                { id: "chicken", label: "Chicken breast (2 lb)" },
-                { id: "apples", label: "Apples (6 pack)" },
-                { id: "spinach", label: "Fresh spinach (1 bag)" }
-            ];
-
-            setItems(recommended);
-        }
-        load();
-    }, []);
-
 
     const handleCheck = (id) => {
         setItems((prev) => prev.filter((it) => it.id !== id));
@@ -72,7 +44,11 @@ export default function GroceryList() {
                 </p>
 
                 <div className="grocery-card">
-                    {items.length === 0 ? (
+                    {loading ? (
+                        <p className="grocery-empty">Loading…</p>
+                    ) : error ? (
+                        <p className="grocery-empty">Failed to load: {String(error.message || error)}</p>
+                    ) : items.length === 0 ? (
                         <p className="grocery-empty">Your list is empty.</p>
                     ) : (
                         <ul className="grocery-list">
@@ -89,7 +65,7 @@ export default function GroceryList() {
                     )}
                 </div>
             </div>
+            <Footer />
         </main>
     );
-    <Footer />
 }

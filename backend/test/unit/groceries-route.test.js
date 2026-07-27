@@ -5,39 +5,14 @@ const {
   createGroceriesRouter,
   resolveGroceriesUserId
 } = require("../../src/routes/groceries");
-const { env } = require("../../src/lib/env");
 const {
   createMockResponse,
   getRouteHandler
 } = require("./helpers/http");
 
-test("resolveGroceriesUserId prefers request values before DEV_TEST_USER_ID", () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "dev-user-123";
-
-  assert.equal(
-    resolveGroceriesUserId({
-      body: {
-        user_id: " body-user "
-      },
-      query: {
-        user_id: "query-user"
-      }
-    }),
-    "body-user"
-  );
-
-  assert.equal(
-    resolveGroceriesUserId({
-      query: {
-        user_id: " query-user "
-      }
-    }),
-    "query-user"
-  );
-
-  assert.equal(resolveGroceriesUserId({}), "dev-user-123");
-  env.devTestUserId = originalDevTestUserId;
+test("resolveGroceriesUserId uses only the authenticated user", () => {
+  assert.equal(resolveGroceriesUserId({ user: { id: " user-123 " } }), "user-123");
+  assert.equal(resolveGroceriesUserId({ body: { user_id: "body-user" } }), "");
 });
 
 test("GET /api/groceries returns structured recommendations from the service", async () => {
@@ -64,9 +39,7 @@ test("GET /api/groceries returns structured recommendations from the service", a
 
   await handler(
     {
-      query: {
-        user_id: " user-123 "
-      }
+      user: { id: " user-123 " }
     },
     response,
     (error) => {
@@ -93,9 +66,7 @@ test("GET /api/groceries returns structured recommendations from the service", a
   });
 });
 
-test("GET /api/groceries falls back to DEV_TEST_USER_ID", async () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "dev-user-123";
+test("GET /api/groceries uses the authenticated user", async () => {
   const buildCalls = [];
   const router = createGroceriesRouter({
     buildGroceriesForUser: async (userId) => {
@@ -106,7 +77,7 @@ test("GET /api/groceries falls back to DEV_TEST_USER_ID", async () => {
   const handler = getRouteHandler(router, "get", "/");
   const response = createMockResponse();
 
-  await handler({}, response, () => {});
+  await handler({ user: { id: "dev-user-123" } }, response, () => {});
 
   assert.deepEqual(buildCalls, ["dev-user-123"]);
   assert.equal(response.statusCode, 200);
@@ -114,12 +85,9 @@ test("GET /api/groceries falls back to DEV_TEST_USER_ID", async () => {
     status: "ok",
     data: []
   });
-  env.devTestUserId = originalDevTestUserId;
 });
 
-test("GET /api/groceries returns 400 when no user can be resolved", async () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "";
+test("GET /api/groceries returns 401 when no authenticated user is present", async () => {
   let buildWasCalled = false;
   const router = createGroceriesRouter({
     buildGroceriesForUser: async () => {
@@ -133,11 +101,10 @@ test("GET /api/groceries returns 400 when no user can be resolved", async () => 
   await handler({}, response, () => {});
 
   assert.equal(buildWasCalled, false);
-  assert.equal(response.statusCode, 400);
+  assert.equal(response.statusCode, 401);
   assert.deepEqual(response.body, {
-    error: 'A "user_id" is required.'
+    error: "Authentication is required."
   });
-  env.devTestUserId = originalDevTestUserId;
 });
 
 test("GET /api/groceries forwards unexpected service errors", async () => {
@@ -152,9 +119,7 @@ test("GET /api/groceries forwards unexpected service errors", async () => {
 
   await handler(
     {
-      query: {
-        user_id: "user-123"
-      }
+      user: { id: "user-123" }
     },
     response,
     (error) => {

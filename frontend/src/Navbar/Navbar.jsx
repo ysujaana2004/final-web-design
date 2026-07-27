@@ -1,9 +1,21 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import "../Home/Home.css";
 import bread from "../assets/bread.png";
 import Button from "../Buttons/Button";
+import { useAuth } from "../auth/useAuth";
 
 export default function Navbar() {
+    const navigate = useNavigate();
+    const { user, signOut } = useAuth();
+
+    const handleSignOut = async () => {
+        const { error } = await signOut();
+
+        if (!error) {
+            navigate("/", { replace: true });
+        }
+    };
+
     return (
         <header className="navbar">
             <div className="navbar__container">
@@ -29,9 +41,15 @@ export default function Navbar() {
                     </NavLink>
                 </nav>
                 <div className="navbar__actions">
-                    <Link to="/login">
-                        <Button />
-                    </Link>
+                    {user ? (
+                        <button className="btn" type="button" onClick={handleSignOut}>
+                            Log out
+                        </button>
+                    ) : (
+                        <Link to="/login">
+                            <Button />
+                        </Link>
+                    )}
 
                 </div>
             </div>

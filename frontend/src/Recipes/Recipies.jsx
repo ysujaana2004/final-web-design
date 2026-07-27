@@ -3,37 +3,28 @@ import { useEffect, useState } from "react";
 import "./Recipies.css"
 import Addreci from "../Buttons/AddReci.jsx";
 import Footer from "../Footer/Footer.jsx";
-
-const mockRecipes = [
-  { id: "1", title: "Spicy Creamy Tomato Pasta", description: "A delicious pasta dish with a kick." },
-  { id: "2", title: "Garlic Butter Steak Bites", description: "Tender and juicy steak bites cooked in garlic butter." },
-  { id: "3", title: "Chicken Tikka Masala", description: "Classic Indian curry with rich flavors." },
-  { id: "4", title: "Vegetable Stir Fry", description: "Quick and healthy mixed vegetable stir fry." },
-  { id: "5", title: "Chocolate Chip Cookies", description: "Soft, chewy, and loaded with chocolate chips." }
-];
-
-const getAllRecipes = async () => {
-  return new Promise((resolve) => setTimeout(() => resolve([...mockRecipes]), 500));
-};
+import { getRecipes } from "../lib/api.js";
 
 export default function Recipes() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const loadRecipes = async () => {
+    setLoading(true);
+    try {
+      const { data } = await getRecipes();
+      setRecipes(Array.isArray(data) ? data : []);
+      setError(null);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const ac = new AbortController();
-    (async () => {
-      try {
-        const data = await getAllRecipes();
-        setRecipes(Array.isArray(data) ? data : []);
-      } catch (e) {
-        if (e.name !== "AbortError") setError(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => ac.abort();
+    loadRecipes();
   }, []);
 
   return (
@@ -50,11 +41,7 @@ export default function Recipes() {
           </p>
         </div>
         <div className="navbar__actions">
-          <Addreci onRecipeCreated={(recipe) =>
-            setRecipes((prev) =>
-              recipe ? [recipe, ...prev.filter((r) => r.id !== recipe.id)] : prev
-            )
-          } />
+          <Addreci onRecipeCreated={loadRecipes} />
         </div>
         <div className="searchbar">
           <input

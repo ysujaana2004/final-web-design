@@ -6,7 +6,6 @@ const {
   createRecipesRouter,
   saveGeneratedRecipe
 } = require("../../src/routes/recipes");
-const { env } = require("../../src/lib/env");
 const {
   createMockResponse,
   getRouteHandler
@@ -42,9 +41,9 @@ test("POST /api/recipes returns a generated recipe and cleans up temporary audio
 
   await handler(
     {
+      user: { id: "user-123" },
       body: {
         videoUrl: "https://www.instagram.com/reel/test/",
-        user_id: "user-123"
       }
     },
     response,
@@ -91,6 +90,7 @@ test("POST /api/recipes rejects requests without a videoUrl", async () => {
 
   await handler(
     {
+      user: { id: "user-123" },
       body: {}
     },
     response,
@@ -104,9 +104,7 @@ test("POST /api/recipes rejects requests without a videoUrl", async () => {
   assert.equal(downloadWasCalled, false);
 });
 
-test("POST /api/recipes rejects requests without a user", async () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "";
+test("POST /api/recipes rejects requests without an authenticated user", async () => {
   let downloadWasCalled = false;
   const router = createRecipesRouter({
     downloadAudio: async () => {
@@ -127,12 +125,11 @@ test("POST /api/recipes rejects requests without a user", async () => {
     () => {}
   );
 
-  assert.equal(response.statusCode, 400);
+  assert.equal(response.statusCode, 401);
   assert.deepEqual(response.body, {
-    error: 'A "user_id" is required unless DEV_TEST_USER_ID is configured.'
+    error: "Authentication is required."
   });
   assert.equal(downloadWasCalled, false);
-  env.devTestUserId = originalDevTestUserId;
 });
 
 test("POST /api/recipes cleans up temporary audio when Gemini fails", async () => {
@@ -156,9 +153,9 @@ test("POST /api/recipes cleans up temporary audio when Gemini fails", async () =
 
   await handler(
     {
+      user: { id: "user-123" },
       body: {
         videoUrl: "https://www.tiktok.com/@cook/video/123",
-        user_id: "user-123"
       }
     },
     response,
@@ -199,9 +196,9 @@ test("POST /api/recipes cleans up temporary audio when recipe saving fails", asy
 
   await handler(
     {
+      user: { id: "user-123" },
       body: {
         videoUrl: "https://www.instagram.com/reel/test/",
-        user_id: "user-123"
       }
     },
     response,
@@ -364,11 +361,11 @@ test("PUT /api/recipes/:id updates only the owning user's recipe", async () => {
 
   await handler(
     {
+      user: { id: "user-123" },
       params: {
         id: "recipe-123"
       },
       body: {
-        user_id: "user-123",
         title: " Updated Toast ",
         instructions: [" Step 1 "],
         ingredients: [" Bread ", " Butter "]
@@ -477,12 +474,10 @@ test("DELETE /api/recipes/:id deletes only the owning user's recipe", async () =
 
   await handler(
     {
+      user: { id: "user-123" },
       params: {
         id: "recipe-123"
       },
-      query: {
-        user_id: "user-123"
-      }
     },
     response,
     () => {}

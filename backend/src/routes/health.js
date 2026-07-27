@@ -1,6 +1,7 @@
 const express = require("express");
 
 const { supabase } = require("../lib/db");
+const { requireAuth } = require("../middleware/require-auth");
 
 function createHealthRouter(dependencies = {}) {
   const router = express.Router();
@@ -12,11 +13,14 @@ function createHealthRouter(dependencies = {}) {
     });
   });
 
-  router.get("/db", async (_req, res) => {
+  router.use("/db", requireAuth);
+
+  router.get("/db", async (req, res) => {
     try {
       // a tiny read of Supabase. It verifies that the backend can
       // reach Supabase and that the expected pantry table is queryable.
-      const { error } = await database
+      const requestDatabase = req.supabase || database;
+      const { error } = await requestDatabase
         .from("pantry_items")
         .select("id")
         .limit(1);

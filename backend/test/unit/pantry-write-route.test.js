@@ -2,15 +2,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { createPantryRouter } = require("../../src/routes/pantry");
-const { env } = require("../../src/lib/env");
 const {
   createMockResponse,
   getRouteHandler
 } = require("./helpers/http");
 
-test("POST /api/pantry rejects requests without user_id or ingredient", async () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "";
+test("POST /api/pantry rejects requests without an authenticated user", async () => {
   const router = createPantryRouter();
   const handler = getRouteHandler(router, "post", "/");
   const response = createMockResponse();
@@ -28,12 +25,11 @@ test("POST /api/pantry rejects requests without user_id or ingredient", async ()
     }
   );
 
-  assert.equal(response.statusCode, 400);
+  assert.equal(response.statusCode, 401);
   assert.deepEqual(response.body, {
-    error: "user_id and ingredient are required"
+    error: "Authentication is required."
   });
   assert.equal(nextWasCalled, false);
-  env.devTestUserId = originalDevTestUserId;
 });
 
 test("POST /api/pantry reuses an existing normalized ingredient row", async () => {
@@ -112,8 +108,8 @@ test("POST /api/pantry reuses an existing normalized ingredient row", async () =
 
   await handler(
     {
+      user: { id: "user-123" },
       body: {
-        user_id: " user-123 ",
         ingredient: "  Heavy Cream!! "
       }
     },
@@ -234,8 +230,8 @@ test("POST /api/pantry creates a new canonical ingredient row when missing", asy
 
   await handler(
     {
+      user: { id: "user-123" },
       body: {
-        user_id: "user-123",
         ingredient: "Paprika"
       }
     },
@@ -302,11 +298,11 @@ test("PUT /api/pantry/:id scopes updates to the owning user", async () => {
 
   await handler(
     {
+      user: { id: "user-123" },
       params: {
         id: "pantry-1"
       },
       body: {
-        user_id: "user-123",
         quantity: 0,
         unit: ""
       }
@@ -365,12 +361,10 @@ test("DELETE /api/pantry/:id scopes deletes to the owning user", async () => {
 
   await handler(
     {
+      user: { id: "user-123" },
       params: {
         id: "pantry-1"
       },
-      query: {
-        user_id: "user-123"
-      }
     },
     response,
     () => {}
@@ -383,9 +377,7 @@ test("DELETE /api/pantry/:id scopes deletes to the owning user", async () => {
   });
 });
 
-test("POST /api/pantry falls back to DEV_TEST_USER_ID when request user_id is missing", async () => {
-  const originalDevTestUserId = env.devTestUserId;
-  env.devTestUserId = "dev-user-123";
+test("POST /api/pantry uses the authenticated user", async () => {
 
   const router = createPantryRouter({
     supabase: {
@@ -443,16 +435,11 @@ test("POST /api/pantry falls back to DEV_TEST_USER_ID when request user_id is mi
   const response = createMockResponse();
 
   await handler(
-    {
-      body: {
-        ingredient: "milk"
-      }
-    },
+    { user: { id: "dev-user-123" }, body: { ingredient: "milk" } },
     response,
     () => {}
   );
 
   assert.equal(response.statusCode, 201);
   assert.equal(response.body.data.user_id, "dev-user-123");
-  env.devTestUserId = originalDevTestUserId;
 });

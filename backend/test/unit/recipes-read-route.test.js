@@ -7,7 +7,7 @@ const {
   getRouteHandler
 } = require("./helpers/http");
 
-test("GET /api/recipes requires a user_id and filters recipes by that owner", async () => {
+test("GET /api/recipes filters recipes by the authenticated owner", async () => {
   let receivedUserId = null;
   const router = createRecipesRouter({
     supabase: {
@@ -48,9 +48,7 @@ test("GET /api/recipes requires a user_id and filters recipes by that owner", as
 
   await handler(
     {
-      query: {
-        user_id: " user-123 "
-      }
+      user: { id: " user-123 " }
     },
     response,
     () => {}
@@ -101,9 +99,7 @@ test("GET /api/recipes/:id returns 404 when the recipe does not belong to that u
       params: {
         id: "recipe-404"
       },
-      query: {
-        user_id: "user-123"
-      }
+      user: { id: "user-123" }
     },
     response,
     () => {}
