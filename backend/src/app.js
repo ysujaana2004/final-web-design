@@ -8,6 +8,7 @@ const usersRoutes = require("./routes/users");
 const recipesRoutes = require("./routes/recipes");
 const pantryRoutes = require("./routes/pantry");
 const groceriesRoutes = require("./routes/groceries");
+const { requireAuth } = require("./middleware/require-auth");
 
 function createApp() {
   const app = express();
@@ -29,9 +30,9 @@ function createApp() {
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
   app.use("/api/users", usersRoutes);
-  app.use("/api/recipes", recipesRoutes);
-  app.use("/api/pantry", pantryRoutes);
-  app.use("/api/groceries", groceriesRoutes);
+  app.use("/api/recipes", requireAuth, recipesRoutes);
+  app.use("/api/pantry", requireAuth, pantryRoutes);
+  app.use("/api/groceries", requireAuth, groceriesRoutes);
 
   app.use((err, _req, res, _next) => {
     res.status(500).json({

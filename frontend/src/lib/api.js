@@ -1,12 +1,20 @@
+import { supabase } from "./supabase";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
-const USER_ID = import.meta.env.VITE_DEV_USER_ID || "";
+async function getAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token || "";
+}
 
 async function request(path, options = {}) {
+  const accessToken = await getAccessToken();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -22,14 +30,13 @@ async function request(path, options = {}) {
 }
 
 export function getPantryItems() {
-  return request(`/pantry?user_id=${encodeURIComponent(USER_ID)}`);
+  return request("/pantry");
 }
 
 export function createPantryItem({ ingredient, quantity, unit }) {
   return request("/pantry", {
     method: "POST",
     body: JSON.stringify({
-      user_id: USER_ID,
       ingredient,
       quantity,
       unit,
@@ -38,35 +45,34 @@ export function createPantryItem({ ingredient, quantity, unit }) {
 }
 
 export function deletePantryItem(id) {
-  return request(`/pantry/${id}?user_id=${encodeURIComponent(USER_ID)}`, {
+  return request(`/pantry/${id}`, {
     method: "DELETE",
   });
 }
 
 export function getGroceries() {
-  return request(`/groceries?user_id=${encodeURIComponent(USER_ID)}`);
+  return request("/groceries");
 }
 
 export function getRecipes() {
-  return request(`/recipes?user_id=${encodeURIComponent(USER_ID)}`);
+  return request("/recipes");
 }
 
 export function getRecipeById(id) {
-  return request(`/recipes/${id}?user_id=${encodeURIComponent(USER_ID)}`);
+  return request(`/recipes/${id}`);
 }
 
 export function createRecipeFromVideo(videoUrl) {
   return request("/recipes", {
     method: "POST",
     body: JSON.stringify({
-      user_id: USER_ID,
       videoUrl,
     }),
   });
 }
 
 export function deleteRecipe(id) {
-  return request(`/recipes/${id}?user_id=${encodeURIComponent(USER_ID)}`, {
+  return request(`/recipes/${id}`, {
     method: "DELETE",
   });
 }

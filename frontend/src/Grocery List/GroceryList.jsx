@@ -41,6 +41,8 @@ export default function GroceryList() {
         return () => { cancelled = true; };
     }, []);
 
+    const dividerIndex = items.findIndex((it) => !it.unlockCount);
+
     const handleCheck = (id) => {
         setItems((prev) => prev.filter((it) => it.id !== id));
     };

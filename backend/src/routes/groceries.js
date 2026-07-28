@@ -1,5 +1,5 @@
 const express = require("express");
-const { env } = require("../lib/env");
+const { supabase } = require("../lib/db");
 const { buildGroceriesForUser } = require("../services/groceries");
 
 function normalizeUserId(value) {
@@ -9,31 +9,26 @@ function normalizeUserId(value) {
 }
 
 function resolveGroceriesUserId(req = {}) {
-  // Match the same precedence used elsewhere in the backend so local CLI
-  // testing and future frontend wiring behave consistently.
-  return normalizeUserId(req.body?.user_id)
-    || normalizeUserId(req.query?.user_id)
-    || env.devTestUserId
-    || "";
+  return normalizeUserId(req.user?.id);
 }
 
 function createGroceriesRouter(dependencies = {}) {
   const router = express.Router();
   const buildGroceries = dependencies.buildGroceriesForUser || buildGroceriesForUser;
+  const database = dependencies.supabase || supabase;
 
   // GET /api/groceries
   router.get("/", async (req, res, next) => {
     try {
       const userId = resolveGroceriesUserId(req);
+      const requestDatabase = req.supabase || database;
 
       if (!userId) {
-        return res.status(400).json({
-          error: 'A "user_id" is required.'
-        });
+        return res.status(401).json({ error: "Authentication is required." });
       }
 
       // Keep ranking logic in the service layer so this route only handles HTTP.
-      const data = await buildGroceries(userId);
+      const data = await buildGroceries(userId, requestDatabase);
 
       res.json({
         status: "ok",
