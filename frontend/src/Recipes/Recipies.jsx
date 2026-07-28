@@ -3,29 +3,46 @@ import { useEffect, useState } from "react";
 import "./Recipies.css"
 import Addreci from "../Buttons/AddReci.jsx";
 import Footer from "../Footer/Footer.jsx";
-import { getRecipes } from "../lib/api.js";
+import { deleteRecipe, getPantryItems, getRecipes } from "../lib/api";
+import { buildPantryMatchKeys, isIngredientInPantry } from "../lib/pantryMatch";
 
 export default function Recipes() {
   const [recipes, setRecipes] = useState([]);
+  const [pantryMatchKeys, setPantryMatchKeys] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadRecipes = async () => {
-    setLoading(true);
+  async function loadRecipes() {
     try {
-      const { data } = await getRecipes();
-      setRecipes(Array.isArray(data) ? data : []);
+      setLoading(true);
       setError(null);
+
+      const [recipeResult, pantryResult] = await Promise.all([
+        getRecipes(),
+        getPantryItems(),
+      ]);
+      setRecipes(recipeResult.data || []);
+      setPantryMatchKeys(buildPantryMatchKeys(pantryResult.data || []));
     } catch (e) {
       setError(e);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     loadRecipes();
   }, []);
+
+  async function handleDelete(id) {
+    try {
+      setError(null);
+      await deleteRecipe(id);
+      await loadRecipes();
+    } catch (e) {
+      setError(e);
+    }
+  }
 
   return (
     <main className="page">
@@ -65,7 +82,14 @@ export default function Recipes() {
         ) : error ? (
           <p className="muted">Failed to load: {String(error.message || error)}</p>
         ) : recipes.length ? (
-          recipes.map((r) => <RecipeTitleCard key={r.id ?? r.title} recipe={r} />)
+          recipes.map((r) => (
+            <RecipeTitleCard
+              key={r.id ?? r.title}
+              recipe={r}
+              pantryMatchKeys={pantryMatchKeys}
+              onDelete={handleDelete}
+            />
+          ))
         ) : (
           <p className="muted">No recipes yet.</p>
         )}
@@ -74,14 +98,32 @@ export default function Recipes() {
   );
 }
 
-function RecipeTitleCard({ recipe }) {
+function RecipeTitleCard({ recipe, pantryMatchKeys, onDelete }) {
+  const recipeIngredients = recipe.recipe_ingredients ?? [];
+  const totalCount = recipeIngredients.length;
+  const haveCount = recipeIngredients.filter((ri) =>
+    isIngredientInPantry(ri, pantryMatchKeys)
+  ).length;
+
   return (
     <article className="card recipe recipe--minimal">
-      <h3 className="recipe__title">{recipe.title}</h3>
+      <h3 className="recipe__title">
+        {recipe.title}{" "}
+        <span className="recipe__ingredient-count">
+          ({haveCount}/{totalCount})
+        </span>
+      </h3>
       <div className="recipe__actions">
         <Link to={`/recipes/${recipe.id}`} className="btn btn--ghost sm">
           View Recipe
         </Link>
+        <button
+          type="button"
+          className="btn btn--ghost sm"
+          onClick={() => onDelete(recipe.id)}
+        >
+          Delete
+        </button>
       </div>
     </article>
   );
