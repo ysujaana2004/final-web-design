@@ -51,7 +51,7 @@ export default function Footer() {
         </p>
       </div>
 
-      <p className="footer-copy">© 2025 reciPal. All rights reserved.</p>
+      <p className="footer-copy">© 2026 reciPal. All rights reserved.</p>
     </footer>
   );
 }
