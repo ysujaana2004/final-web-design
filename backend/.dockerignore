@@ -1,0 +1,8 @@
+node_modules
+.env
+npm-debug.log
+Dockerfile
+README.md
+test
+test-audio.mp3
+src/db_test.http
