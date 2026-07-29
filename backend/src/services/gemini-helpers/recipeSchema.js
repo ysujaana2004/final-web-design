@@ -11,7 +11,7 @@ const recipeSchema = {
     },
     ingredients: {
       type: "array",
-      description: "A list of ingredient lines.",
+      description: "A list of simple, generic ingredient names with no quantities or preparation descriptors.",
       items: {
         type: "string",
         minLength: 1
@@ -32,10 +32,10 @@ const recipeSchema = {
 const recipeExample = {
   title: "Garlic Butter Pasta",
   ingredients: [
-    "8 oz pasta",
-    "3 tbsp butter",
-    "4 cloves garlic",
-    "Salt to taste"
+    "pasta",
+    "butter",
+    "garlic",
+    "salt"
   ],
   instructions: [
     "Boil the pasta until tender.",

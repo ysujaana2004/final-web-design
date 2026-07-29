@@ -19,7 +19,10 @@ The JSON must use exactly these fields:
 
 Rules:
 - Keep the title short and clear.
-- Each ingredient should be one string in the ingredients array.
+- Each ingredient should be one simple, generic ingredient name in the ingredients array.
+- Do not include quantities, measurements, preparation words, or quality descriptors in ingredient names.
+- Prefer pantry-style ingredient names such as "cilantro", "chicken breast", "hot sauce", "salt", "pepper", "apples", and "flour".
+- For example, use "cilantro" instead of "chopped cilantro" or "fresh cilantro".
 - Each cooking step should be one string in the instructions array.
 - If some details are unclear, do your best with the information in the audio.
 - Do not invent unrelated details.
