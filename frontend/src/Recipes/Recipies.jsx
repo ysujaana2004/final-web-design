@@ -44,6 +44,24 @@ export default function Recipes() {
     }
   }
 
+  const sortedRecipes = [...recipes].sort((left, right) => {
+    const leftCompletion = getCompletionRatio(left, pantryMatchKeys);
+    const rightCompletion = getCompletionRatio(right, pantryMatchKeys);
+
+    if (leftCompletion !== rightCompletion) {
+      return rightCompletion - leftCompletion;
+    }
+
+    const leftTotal = (left.recipe_ingredients ?? []).length;
+    const rightTotal = (right.recipe_ingredients ?? []).length;
+
+    if (leftTotal !== rightTotal) {
+      return leftTotal - rightTotal;
+    }
+
+    return (left.title || "").localeCompare(right.title || "");
+  });
+
   return (
     <main className="page">
       {/* Page header and Search combined */}
@@ -81,8 +99,8 @@ export default function Recipes() {
           <p className="muted">Loading…</p>
         ) : error ? (
           <p className="muted">Failed to load: {String(error.message || error)}</p>
-        ) : recipes.length ? (
-          recipes.map((r) => (
+        ) : sortedRecipes.length ? (
+          sortedRecipes.map((r) => (
             <RecipeTitleCard
               key={r.id ?? r.title}
               recipe={r}
@@ -96,6 +114,21 @@ export default function Recipes() {
       </section>
     </main>
   );
+}
+
+function getCompletionRatio(recipe, pantryMatchKeys) {
+  const recipeIngredients = recipe.recipe_ingredients ?? [];
+  const totalCount = recipeIngredients.length;
+
+  if (totalCount === 0) {
+    return 0;
+  }
+
+  const missingCount = recipeIngredients.filter((ri) =>
+    !isIngredientInPantry(ri, pantryMatchKeys)
+  ).length;
+
+  return (totalCount - missingCount) / totalCount;
 }
 
 function RecipeTitleCard({ recipe, pantryMatchKeys, onDelete }) {
